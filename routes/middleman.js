@@ -19,6 +19,7 @@ router.get('/banks/:bankId/missions', getMissions);
 router.post('/banks/:bankId/missions', addMission);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
 router.put('/banks/:bankId/missions/:missionId', editMission);
+router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
 
 
@@ -159,6 +160,23 @@ function editMission(req, res) {
     data: req.body,
     method: 'PUT',
     path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}`
+  };
+
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function editOffered(req, res) {
+  // edit an assessment offered, i.e. start date / deadline
+  let options = {
+    data: req.body,
+    method: 'PUT',
+    path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}`
   };
 
   qbank(options)
