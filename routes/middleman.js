@@ -2,6 +2,8 @@ var express = require('express');
 var router = express.Router();
 var request = require('request');
 var rp = require('request-promise');
+let Q = require('q');
+let _ = require('lodash');
 
 let credentials = require('../credentials');
 let qbank = require('../lib/qBankFetch')(credentials);
@@ -13,8 +15,8 @@ let qbank = require('../lib/qBankFetch')(credentials);
 
 // so the full path for this endpoint is /middleman/...
 router.get('/banks/:bankId', getBankDetails);
-router.get('/missions', getMissions);
-router.post('/missions', addMission);
+router.get('/banks/:bankId/missions', getMissions);
+router.post('/banks/:bankId/missions', addMission);
 
 
 function getBankDetails(req, res) {
@@ -36,14 +38,39 @@ function getBankDetails(req, res) {
 function getMissions(req, res) {
   // return res.send('ok!');       // go to localhost:8888/middleman/missions to make sure this is running ok
 
-  let options = {
-    uri: 'https://qbank-dev.mit.edu/api/v2/assessment/banks/assessment.Bank:57d70ed471e482a74879349a@bazzim.MIT.EDU/assessments?sections&page=all'
-  };
+  let assessmentOptions = {
+    path: `assessment/banks/${req.params.bankId}/assessments?sections&page=all`
+  },
+  assessments = [];
 
   // do this async-ly
-  rp(options)
+  qbank(assessmentOptions)
   .then( function(result) {
-    return res.send(result);             // this line sends back the response to the client
+    // now concat with offereds for each assessment
+    let offeredsOptions = [];
+    result = JSON.parse(result);
+
+    if (result.data.count == 0) {
+      return Q.when([]);
+    }
+
+    assessments = result.data.results;
+    _.each(assessments, (assessment) => {
+      let offeredOption = {
+        path: `assessment/banks/${req.params.bankId}/assessments/${assessment.id}/assessmentsoffered`
+      };
+      offeredsOptions.push(qbank(offeredOption));
+    });
+    return Q.all(offeredsOptions);
+  })
+  .then( (responses) => {
+    _.each(responses, (responseString, index) => {
+      let response = JSON.parse(responseString);
+      assessments[index].startTime = response.data.results[0].startTime;
+      assessments[index].deadline = response.data.results[0].deadline;
+      assessments[index].assessmentOfferedId = response.data.results[0].id;
+    })
+    return res.send(assessments);             // this line sends back the response to the client
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
