@@ -36,6 +36,7 @@ function getBankDetails(req, res) {
 }
 
 function getMissions(req, res) {
+  // get assessments + offereds
   // return res.send('ok!');       // go to localhost:8888/middleman/missions to make sure this is running ok
 
   let assessmentOptions = {
@@ -78,7 +79,35 @@ function getMissions(req, res) {
 }
 
 function addMission(req, res) {
-  // blah
+  // create assessment + offered
+  let assessmentOptions = {
+    data: req.body,
+    method: 'POST',
+    path: `assessment/banks/${req.params.bankId}/assessments`
+  },
+    assessment = {};
+
+  qbank(assessmentOptions)
+  .then( function(result) {
+    assessment = JSON.parse(result);
+    // now create the offered
+    let offeredOption = {
+      data: req.body,
+      method: 'POST',
+      path: `assessment/banks/${req.params.bankId}/assessments/${assessment.id}/assessmentsoffered`
+    };
+    return qbank(offeredOption);
+  })
+  .then( (result) => {
+    let offered = JSON.parse(result);
+    assessment.startTime = offered.startTime;
+    assessment.deadline = offered.deadline;
+    assessment.assessmentOfferedId = offered.id;
+    return res.send(assessment);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
 }
 
 
