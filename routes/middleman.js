@@ -28,6 +28,7 @@ router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
 router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
 router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
+router.get('/hierarchies/:nodeId/children', getNodeChildren);
 router.get('/objectivebanks/:bankId/modules', getModules);
 router.get('/objectivebanks/:familyId/relationships', getRelationships);
 
@@ -324,6 +325,23 @@ function setMissionItems(req, res) {
   // Sets the items in a specific mission
   return res.status(500).send('deprecated endpoint');
 }
+
+function getNodeChildren(req, res) {
+  // Gets you the assessment bank hierarchy children for the given nodeId
+  let options = {
+    path: `assessment/hierarchies/nodes/${req.params.nodeId}/children`
+  };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
 
 
 module.exports = router;
