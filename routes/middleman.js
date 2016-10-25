@@ -17,6 +17,8 @@ let qbank = require('../lib/qBankFetch')(credentials);
 router.get('/banks/:bankId', getBankDetails);
 router.get('/banks/:bankId/missions', getMissions);
 router.post('/banks/:bankId/missions', addMission);
+router.delete('/banks/:bankId/missions/:missionId', deleteMission);
+router.put('/banks/:bankId/missions/:missionId', editMission);
 
 
 function getBankDetails(req, res) {
@@ -104,6 +106,46 @@ function addMission(req, res) {
     assessment.deadline = offered.deadline;
     assessment.assessmentOfferedId = offered.id;
     return res.send(assessment);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function deleteMission(req, res) {
+  // delete assessment + offered
+  let offeredOptions = {
+    method: 'DELETE',
+    path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.body.assessmentOfferedId}`
+  };
+
+  qbank(offeredOptions)
+  .then( function(result) {
+    let assessmentOption = {
+      method: 'DELETE',
+      path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}`
+    };
+    return qbank(assessmentOption);
+  })
+  .then( (result) => {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function editMission(req, res) {
+  // edit an assessment, by adding / editing the parts within it
+  let options = {
+    data: req.body,
+    method: 'PUT',
+    path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}`
+  };
+
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
