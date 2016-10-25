@@ -14,6 +14,7 @@ let qbank = require('../lib/qBankFetch')(credentials);
 // ==========
 
 // so the full path for this endpoint is /middleman/...
+router.post('/authorizations', setAuthorizations);
 router.get('/banks/:bankId', getBankDetails);
 router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
@@ -215,6 +216,23 @@ function editOffered(req, res) {
     data: req.body,
     method: 'PUT',
     path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}`
+  };
+
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function setAuthorizations(req, res) {
+  // bulk-set the authorizations
+  let options = {
+    data: req.body,
+    method: 'POST',
+    path: `authorization/authorizations`
   };
 
   qbank(options)
