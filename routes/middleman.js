@@ -20,6 +20,7 @@ router.post('/banks/:bankId/missions', addMission);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
 router.put('/banks/:bankId/missions/:missionId', editMission);
 router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
+router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
 router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
 
@@ -41,6 +42,7 @@ function getBankDetails(req, res) {
 }
 
 function getMissionItems(req, res) {
+  // Deprecated with the new LO-focused way to define the missions? Oct 25, 2016
   // Gets the items in a specific mission
   let options = {
     path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}/items?sections&page=all`
@@ -204,6 +206,12 @@ function editOffered(req, res) {
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
   });
+}
+
+function setMissionItems(req, res) {
+  // Deprecated with the new LO-focused way to define the missions? Oct 25, 2016
+  // Sets the items in a specific mission
+  return res.status(500).send('deprecated endpoint');
 }
 
 
