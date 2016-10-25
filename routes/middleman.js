@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var request = require('request');
+var rp = require('request-promise');
 
 let credentials = require('../credentials')
 
@@ -18,11 +19,11 @@ function getMissions(req, res) {
   // return res.send('ok!');       // go to localhost:8888/middleman/missions to make sure this is running ok
 
   let options = {
-
+    uri: 'https://qbank-dev.mit.edu/api/v2/assessment/banks/assessment.Bank:57d70ed471e482a74879349a@bazzim.MIT.EDU/assessments?sections&page=all'
   };
 
   // do this async-ly
-  request(options)
+  rp(options)
   .then( function(result) {
     return res.send(result);             // this line sends back the response to the client
   })
