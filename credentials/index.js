@@ -1,5 +1,6 @@
 
 
+<<<<<<< HEAD
 module.exports = {
   d2l: {
     appID: process.env.D2L_APP_ID || '',
@@ -28,3 +29,11 @@ module.exports = {
   KatexCSS: 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min.css',
   KatexAutoRender: 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/contrib/auto-render.min.js',
 };
+=======
+
+let devCredentials = require('./_dev.credentials');
+let prodCredentials = require('./_prod.credentials');
+
+module.exports = devCredentials;
+// module.exports = prodCredentials
+>>>>>>> set up

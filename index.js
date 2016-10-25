@@ -9,7 +9,11 @@ var bodyParser = require('body-parser');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var middleman = require('./routes/middleman')
+<<<<<<< HEAD
 let d2l = require('./routes/d2l')
+=======
+
+>>>>>>> set up
 var app = express();
 
 // view engine setup
@@ -39,7 +43,10 @@ app.use(function(req, res, next) {
 app.use('/', routes);
 app.use('/users', users);     // boilerplate code
 app.use('/middleman', middleman);
+<<<<<<< HEAD
 app.use('/mock-d2l', d2l)
+=======
+>>>>>>> set up
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -80,6 +87,5 @@ httpServer.listen(process.env.PORT || 8888);
 // let listener = app.listen(process.env.PORT || 8888, function(){
 //     console.log('Listening on port ' + listener.address().port); //Listening on port 8888
 // });
-
 // module.exports = app;
 module.exports = httpServer;
