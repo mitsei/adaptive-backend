@@ -18,6 +18,7 @@ let handcar = require('../lib/handcarFetch')(credentials);
 router.post('/authorizations', setAuthorizations);
 router.get('/banks', getBanks);
 router.get('/banks/:bankId', getBankDetails);
+router.put('/banks/:bankId', editBankDetails);
 router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
 router.post('/banks/:bankId/missions', addMission);
@@ -27,12 +28,46 @@ router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
 router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
 router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
+router.get('/hierarchies/:nodeId/children', getNodeChildren);
+router.post('/hierarchies/:nodeId/children', setNodeChildren);
 router.get('/objectivebanks/:bankId/modules', getModules);
 router.get('/objectivebanks/:familyId/relationships', getRelationships);
 
 function getBanks(req, res) {
   // TODO: This needs to also include req.query params, when executing the
   // qbank call
+  let queryParams = _.map(req.query, (val, key) => {
+      return key + '=' + val;
+    }),
+    options = {
+      path: `assessment/banks?${queryParams.join('&')}`
+    };
+
+    qbank(options)
+    .then( function(result) {
+      return res.send(result);             // this line sends back the response to the client
+    })
+    .catch( function(err) {
+      return res.status(err.statusCode).send(err.message);
+    });
+}
+
+function editBankDetails(req, res) {
+  // Edit a specific bank, i.e. to alias a D2L term ID
+  let options = {
+    data: req.body,
+    method: 'PUT',
+    path: `assessment/banks/${req.params.bankId}`
+  };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
 }
 
 function getBankDetails(req, res) {
@@ -291,6 +326,42 @@ function setMissionItems(req, res) {
   // Sets the items in a specific mission
   return res.status(500).send('deprecated endpoint');
 }
+
+function getNodeChildren(req, res) {
+  // Gets you the assessment bank hierarchy children for the given nodeId
+  let options = {
+    path: `assessment/hierarchies/nodes/${req.params.nodeId}/children`
+  };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function setNodeChildren(req, res) {
+  // Set the assessment bank hierarchy children for the given nodeId
+  let options = {
+    data: req.body,
+    method: 'POST',
+    path: `assessment/hierarchies/nodes/${req.params.nodeId}/children`
+  };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+
 
 
 module.exports = router;
