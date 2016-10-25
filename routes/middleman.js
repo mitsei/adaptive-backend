@@ -19,6 +19,7 @@ router.get('/banks/:bankId/missions', getMissions);
 router.post('/banks/:bankId/missions', addMission);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
 router.put('/banks/:bankId/missions/:missionId', editMission);
+router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
 
 
 function getBankDetails(req, res) {
@@ -31,6 +32,23 @@ function getBankDetails(req, res) {
   qbank(options)
   .then( function(result) {
     return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function getMissionResults(req, res) {
+  // Gets the student results for a specific offered
+  let options = {
+    path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?page=all`
+  };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    result = JSON.parse(result);
+    return res.send(result.data.results);             // this line sends back the response to the client
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
