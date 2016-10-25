@@ -7,6 +7,7 @@ let _ = require('lodash');
 
 let credentials = require('../credentials');
 let qbank = require('../lib/qBankFetch')(credentials);
+let handcar = require('../lib/handcarFetch')(credentials);
 
 // ==========
   // API to receive requests from client side
@@ -15,6 +16,7 @@ let qbank = require('../lib/qBankFetch')(credentials);
 
 // so the full path for this endpoint is /middleman/...
 router.post('/authorizations', setAuthorizations);
+router.get('/banks', getBanks);
 router.get('/banks/:bankId', getBankDetails);
 router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
@@ -25,7 +27,12 @@ router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
 router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
 router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
+router.get('/objectivebanks/:bankId/modules', getModules);
 
+function getBanks(req, res) {
+  // TODO: This needs to also include req.query params, when executing the
+  // qbank call
+}
 
 function getBankDetails(req, res) {
   // Gets you displayName and description of a specific bankId
@@ -132,6 +139,22 @@ function getMissions(req, res) {
       assessments[index].assessmentOfferedId = response.data.results[0].id;
     })
     return res.send(assessments);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function getModules(req, res) {
+  // Gets you all of the modules in a hierarchy, for an objective bank
+  let options = {
+    path: `/learning/objectivebanks/${req.params.bankId}/objectives/roots/?descendentlevels=2`
+  };
+
+  // do this async-ly
+  handcar(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
