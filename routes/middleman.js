@@ -33,6 +33,20 @@ router.get('/objectivebanks/:familyId/relationships', getRelationships);
 function getBanks(req, res) {
   // TODO: This needs to also include req.query params, when executing the
   // qbank call
+  let queryParams = _.map(req.query, (val, key) => {
+      return key + '=' + val;
+    }),
+    options = {
+      path: `assessment/banks?${queryParams.join('&')}`
+    };
+
+    qbank(options)
+    .then( function(result) {
+      return res.send(result);             // this line sends back the response to the client
+    })
+    .catch( function(err) {
+      return res.status(err.statusCode).send(err.message);
+    });
 }
 
 function getBankDetails(req, res) {
