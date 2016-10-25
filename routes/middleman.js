@@ -18,6 +18,7 @@ let handcar = require('../lib/handcarFetch')(credentials);
 router.post('/authorizations', setAuthorizations);
 router.get('/banks', getBanks);
 router.get('/banks/:bankId', getBankDetails);
+router.put('/banks/:bankId', editBankDetails);
 router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
 router.post('/banks/:bankId/missions', addMission);
@@ -47,6 +48,24 @@ function getBanks(req, res) {
     .catch( function(err) {
       return res.status(err.statusCode).send(err.message);
     });
+}
+
+function editBankDetails(req, res) {
+  // Edit a specific bank, i.e. to alias a D2L term ID
+  let options = {
+    data: req.body,
+    method: 'PUT',
+    path: `assessment/banks/${req.params.bankId}`
+  };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
 }
 
 function getBankDetails(req, res) {
