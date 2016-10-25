@@ -3,7 +3,8 @@ var router = express.Router();
 var request = require('request');
 var rp = require('request-promise');
 
-let credentials = require('../credentials')
+let credentials = require('../credentials');
+let qbank = require('../lib/qBankFetch')(credentials);
 
 // ==========
   // API to receive requests from client side
@@ -11,9 +12,26 @@ let credentials = require('../credentials')
 // ==========
 
 // so the full path for this endpoint is /middleman/...
+router.get('/banks/:bankId', getBankDetails);
 router.get('/missions', getMissions);
 router.post('/missions', addMission);
 
+
+function getBankDetails(req, res) {
+  // Gets you displayName and description of a specific bankId
+  let options = {
+    path: `assessment/banks/${req.params.bankId}/`
+  };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
 
 function getMissions(req, res) {
   // return res.send('ok!');       // go to localhost:8888/middleman/missions to make sure this is running ok
