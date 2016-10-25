@@ -15,6 +15,7 @@ let qbank = require('../lib/qBankFetch')(credentials);
 
 // so the full path for this endpoint is /middleman/...
 router.get('/banks/:bankId', getBankDetails);
+router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
 router.post('/banks/:bankId/missions', addMission);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
@@ -35,6 +36,23 @@ function getBankDetails(req, res) {
   qbank(options)
   .then( function(result) {
     return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function getBankItems(req, res) {
+  // Gets you all of the items in a bank
+  let options = {
+    path: `assessment/banks/${req.params.bankId}/items?page=all&unrandomized`
+  };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    result = JSON.parse(result);
+    return res.send(result.data.results);             // this line sends back the response to the client
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
