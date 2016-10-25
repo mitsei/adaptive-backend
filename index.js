@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
+var middleman = require('./routes/middleman')
 
 var app = express();
 
@@ -23,7 +24,8 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
-app.use('/users', users);
+app.use('/users', users);     // boilerplate code
+app.use('/middleman', middleman);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -31,6 +33,8 @@ app.use(function(req, res, next) {
   err.status = 404;
   next(err);
 });
+
+
 
 // error handlers
 
@@ -56,5 +60,8 @@ app.use(function(err, req, res, next) {
   });
 });
 
+let listener = app.listen(8888, function(){
+    console.log('Listening on port ' + listener.address().port); //Listening on port 8888
+});
 
 module.exports = app;
