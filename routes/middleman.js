@@ -31,6 +31,7 @@ router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
 router.get('/hierarchies/:nodeId/children', getNodeChildren);
 router.post('/hierarchies/:nodeId/children', setNodeChildren);
 router.get('/objectivebanks/:bankId/modules', getModules);
+router.get('/objectivebanks/:bankId/outcomes', getOutcomes);
 router.get('/objectivebanks/:familyId/relationships', getRelationships);
 
 function getBanks(req, res) {
@@ -182,9 +183,25 @@ function getMissions(req, res) {
 }
 
 function getModules(req, res) {
-  // Gets you all of the modules in a hierarchy, for an objective bank
+  // Gets you all of the modules, for an objective bank
   let options = {
-    path: `/learning/objectivebanks/${req.params.bankId}/objectives/roots/?descendentlevels=2`
+    path: `/learning/objectivebanks/${req.params.bankId}/objectives?genustypeid=mc3-objective%3Amc3.learning.topic%40MIT-OEIT`
+  };
+
+  // do this async-ly
+  handcar(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function getOutcomes(req, res) {
+  // Gets you all of the outcomes, for an objective bank
+  let options = {
+    path: `/learning/objectivebanks/${req.params.bankId}/objectives?genustypeid=mc3-objective%3Amc3.learning.outcome%40MIT-OEIT`
   };
 
   // do this async-ly
