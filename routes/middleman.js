@@ -32,7 +32,7 @@ router.get('/hierarchies/:nodeId/children', getNodeChildren);
 router.post('/hierarchies/:nodeId/children', setNodeChildren);
 router.get('/objectivebanks/:bankId/modules', getModules);
 router.get('/objectivebanks/:bankId/outcomes', getOutcomes);
-router.get('/objectivebanks/:familyId/relationships', getRelationships);
+router.get('/objectivebanks/:bankId/relationships', getRelationships);
 
 function getBanks(req, res) {
   // TODO: This needs to also include req.query params, when executing the
@@ -218,8 +218,17 @@ function getRelationships(req, res) {
   // Gets you all of the relationships for an objective bank
   //  NOte that this requires the familyId, which appears in the
   //  hardcoded handcar settings, on the client-side
+  let familyId;
+
+  if (req.params.bankId == 'mc3-objectivebank%3A2823%40MIT-OEIT') {
+    familyId = 'mc3-family%3A149%40MIT-OEIT';
+  } else if (req.params.bankId == 'mc3-objectivebank%3A2822%40MIT-OEIT') {
+    familyId = 'mc3-family%3A148%40MIT-OEIT';
+  } else {
+    familyId = 'mc3-family%3A147%40MIT-OEIT';
+  }
   let options = {
-    path: `/relationship/families/${req.params.familyId}/relationships?genustypeid=mc3-relationship%3Amc3.lo.2.lo.requisite%40MIT-OEIT&genustypeid=mc3-relationship%3Amc3.lo.2.lo.parent.child%40MIT-OEIT`
+    path: `/relationship/families/${familyId}/relationships?genustypeid=mc3-relationship%3Amc3.lo.2.lo.requisite%40MIT-OEIT&genustypeid=mc3-relationship%3Amc3.lo.2.lo.parent.child%40MIT-OEIT`
   };
 
   // do this async-ly
