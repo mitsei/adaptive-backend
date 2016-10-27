@@ -9,6 +9,44 @@ let credentials = require('../credentials');
 let qbank = require('../lib/qBankFetch')(credentials);
 let handcar = require('../lib/handcarFetch')(credentials);
 
+let domainMapping = {
+  'algebra': ['assessment.Bank%3A57279fb9e7dde086d01b93ef%40bazzim.MIT.EDU', 'mc3-objectivebank%3A2823%40MIT-OEIT'],
+  'accounting': ['assessment.Bank%3A57279fbce7dde086c7fe20ff%40bazzim.MIT.EDU', 'mc3-objectivebank%3A2821%40MIT-OEIT'],
+  'cad': ['assessment.Bank%3A57279fbfe7dde08818af5661%40bazzim.MIT.EDU', 'mc3-objectivebank%3A2822%40MIT-OEIT']
+};
+
+let handcarDomainBanks = {
+  'algebra': 'mc3-objectivebank%3A2823%40MIT-OEIT',
+  'accounting': 'mc3-objectivebank%3A2821%40MIT-OEIT',
+  'cad': 'mc3-objectivebank%3A2822%40MIT-OEIT'
+};
+
+let handcarDomainFamilies = {
+  'algebra': 'mc3-family%3A149%40MIT-OEIT',
+  'accounting': 'mc3-family%3A147%40MIT-OEIT',
+  'cad': 'mc3-family%3A148%40MIT-OEIT'
+};
+
+function getDomain(id) {
+  let domain = 'algebra';  // default
+  _.each(domainMapping, (idList, domainName) => {
+    if (idList.indexOf(id) >= 0) {
+      domain = domainName;
+      return false;
+    }
+  });
+  return domain;
+}
+
+function getHandcarBankId(contentLibraryId) {
+  let domain = getDomain(contentLibraryId);
+  return handcarDomainBanks[domain];
+}
+
+function getHandcarFamilyId(contentLibraryId) {
+  let domain = getDomain(contentLibraryId);
+  return handcarDomainFamilies[domain];
+}
 // ==========
   // API to receive requests from client side
   // @cole: help needed
@@ -28,11 +66,12 @@ router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
 router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
 router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
+router.get('/departments/:departmentName/library', getDepartmentLibraryId);
 router.get('/hierarchies/:nodeId/children', getNodeChildren);
 router.post('/hierarchies/:nodeId/children', setNodeChildren);
-router.get('/objectivebanks/:bankId/modules', getModules);
-router.get('/objectivebanks/:bankId/outcomes', getOutcomes);
-router.get('/objectivebanks/:bankId/relationships', getRelationships);
+router.get('/objectivebanks/:contentLibraryId/modules', getModules);
+router.get('/objectivebanks/:contentLibraryId/outcomes', getOutcomes);
+router.get('/objectivebanks/:contentLibraryId/relationships', getRelationships);
 
 function getBanks(req, res) {
   // TODO: This needs to also include req.query params, when executing the
@@ -184,9 +223,10 @@ function getMissions(req, res) {
 
 function getModules(req, res) {
   // Gets you all of the modules, for an objective bank
-  let options = {
-    path: `/learning/objectivebanks/${req.params.bankId}/objectives?genustypeid=mc3-objective%3Amc3.learning.topic%40MIT-OEIT`
-  };
+  let bankId = getHandcarBankId(req.params.contentLibraryId),
+    options = {
+      path: `/learning/objectivebanks/${bankId}/objectives?genustypeid=mc3-objective%3Amc3.learning.topic%40MIT-OEIT`
+    };
 
   // do this async-ly
   handcar(options)
@@ -200,9 +240,10 @@ function getModules(req, res) {
 
 function getOutcomes(req, res) {
   // Gets you all of the outcomes, for an objective bank
-  let options = {
-    path: `/learning/objectivebanks/${req.params.bankId}/objectives?genustypeid=mc3-objective%3Amc3.learning.outcome%40MIT-OEIT`
-  };
+  let bankId = getHandcarBankId(req.params.contentLibraryId),
+    options = {
+      path: `/learning/objectivebanks/${bankId}/objectives?genustypeid=mc3-objective%3Amc3.learning.outcome%40MIT-OEIT`
+    };
 
   // do this async-ly
   handcar(options)
@@ -218,18 +259,10 @@ function getRelationships(req, res) {
   // Gets you all of the relationships for an objective bank
   //  NOte that this requires the familyId, which appears in the
   //  hardcoded handcar settings, on the client-side
-  let familyId;
-
-  if (req.params.bankId == 'mc3-objectivebank%3A2823%40MIT-OEIT') {
-    familyId = 'mc3-family%3A149%40MIT-OEIT';
-  } else if (req.params.bankId == 'mc3-objectivebank%3A2822%40MIT-OEIT') {
-    familyId = 'mc3-family%3A148%40MIT-OEIT';
-  } else {
-    familyId = 'mc3-family%3A147%40MIT-OEIT';
-  }
-  let options = {
-    path: `/relationship/families/${familyId}/relationships?genustypeid=mc3-relationship%3Amc3.lo.2.lo.requisite%40MIT-OEIT&genustypeid=mc3-relationship%3Amc3.lo.2.lo.parent.child%40MIT-OEIT`
-  };
+  let familyId = getHandcarFamilyId(req.params.contentLibraryId),
+    options = {
+      path: `/relationship/families/${familyId}/relationships?genustypeid=mc3-relationship%3Amc3.lo.2.lo.requisite%40MIT-OEIT&genustypeid=mc3-relationship%3Amc3.lo.2.lo.parent.child%40MIT-OEIT`
+    };
 
   // do this async-ly
   handcar(options)
@@ -387,6 +420,13 @@ function setNodeChildren(req, res) {
   });
 }
 
+function getDepartmentLibraryId(req, res) {
+  if (_.keys(domainMapping).indexOf(req.params.departmentName) >= 0) {
+    return res.send(domainMapping[req.params.departmentName][0]);
+  } else {
+    return res.send('Unknown department');
+  }
+}
 
 
 
