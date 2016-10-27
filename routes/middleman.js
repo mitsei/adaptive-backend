@@ -28,23 +28,25 @@ let handcarDomainFamilies = {
 };
 
 function getDomain(id) {
-  let domain = 'algebra';  // default
+  var domain = 'algebra';  // default
+  if (id.indexOf('@') >= 0) {
+    id = encodeURIComponent(id)
+  }
   _.each(domainMapping, (idList, domainName) => {
     if (idList.indexOf(id) >= 0) {
       domain = domainName;
-      return false;
     }
   });
   return domain;
 }
 
 function getHandcarBankId(contentLibraryId) {
-  let domain = getDomain(contentLibraryId);
+  let domain = getDomain(contentLibraryId).toLowerCase();
   return handcarDomainBanks[domain];
 }
 
 function getHandcarFamilyId(contentLibraryId) {
-  let domain = getDomain(contentLibraryId);
+  let domain = getDomain(contentLibraryId).toLowerCase();
   return handcarDomainFamilies[domain];
 }
 // ==========
@@ -244,7 +246,8 @@ function getOutcomes(req, res) {
     options = {
       path: `/learning/objectivebanks/${bankId}/objectives?genustypeid=mc3-objective%3Amc3.learning.outcome%40MIT-OEIT`
     };
-
+  console.log(bankId);
+  console.log(getDomain(req.params.contentLibraryId));
   // do this async-ly
   handcar(options)
   .then( function(result) {
@@ -421,8 +424,8 @@ function setNodeChildren(req, res) {
 }
 
 function getDepartmentLibraryId(req, res) {
-  if (_.keys(domainMapping).indexOf(req.params.departmentName) >= 0) {
-    return res.send(domainMapping[req.params.departmentName][0]);
+  if (_.keys(domainMapping).indexOf(req.params.departmentName.toLowerCase()) >= 0) {
+    return res.send(domainMapping[req.params.departmentName.toLowerCase()][0]);
   } else {
     return res.send('Unknown department');
   }
