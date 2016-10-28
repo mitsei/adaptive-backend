@@ -66,7 +66,7 @@ router.delete('/banks/:bankId/missions/:missionId', deleteMission);
 router.put('/banks/:bankId/missions/:missionId', editMission);
 router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
 router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
-router.put('/banks/:bankId/offereds/:offeredId', editOffered);
+// router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
 router.get('/departments/:departmentName/library', getDepartmentLibraryId);
 router.get('/hierarchies/:nodeId/children', getNodeChildren);
@@ -338,33 +338,50 @@ function editMission(req, res) {
     data: req.body,
     method: 'PUT',
     path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}`
-  };
+  }, updatedMission;
 
   qbank(options)
   .then( function(result) {
-    return res.send(result);             // this line sends back the response to the client
+    updatedMission = result;
+    // edit an assessment offered, i.e. start date / deadline
+    let options = {
+      data: {
+        startTime: req.body.startTime,
+        deadline: req.body.deadline
+      },
+      method: 'PUT',
+      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.body.assessmentOfferedId}`
+    };
+
+    return qbank(options)
+  })
+  .then( function(result) {
+    updatedMission.startTime = result.startTime;
+    updatedMission.deadline = result.deadline;
+    updatedMission.assessmentOfferedId = result.id;
+    return res.send(updatedMission);             // this line sends back the response to the client
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
   });
 }
-
-function editOffered(req, res) {
-  // edit an assessment offered, i.e. start date / deadline
-  let options = {
-    data: req.body,
-    method: 'PUT',
-    path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}`
-  };
-
-  qbank(options)
-  .then( function(result) {
-    return res.send(result);             // this line sends back the response to the client
-  })
-  .catch( function(err) {
-    return res.status(err.statusCode).send(err.message);
-  });
-}
+//
+// function editOffered(req, res) {
+//   // edit an assessment offered, i.e. start date / deadline
+//   let options = {
+//     data: req.body,
+//     method: 'PUT',
+//     path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}`
+//   };
+//
+//   qbank(options)
+//   .then( function(result) {
+//     return res.send(result);             // this line sends back the response to the client
+//   })
+//   .catch( function(err) {
+//     return res.status(err.statusCode).send(err.message);
+//   });
+// }
 
 function setAuthorizations(req, res) {
   // bulk-set the authorizations
