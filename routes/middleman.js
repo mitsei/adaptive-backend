@@ -342,7 +342,7 @@ function editMission(req, res) {
 
   qbank(options)
   .then( function(result) {
-    updatedMission = result;
+    updatedMission = _.assign({}, JSON.parse(result));
     // edit an assessment offered, i.e. start date / deadline
     let options = {
       data: {
@@ -356,6 +356,7 @@ function editMission(req, res) {
     return qbank(options)
   })
   .then( function(result) {
+    result = JSON.parse(result);
     updatedMission.startTime = result.startTime;
     updatedMission.deadline = result.deadline;
     updatedMission.assessmentOfferedId = result.id;
