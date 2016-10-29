@@ -28,23 +28,25 @@ let handcarDomainFamilies = {
 };
 
 function getDomain(id) {
-  let domain = 'algebra';  // default
+  var domain = 'algebra';  // default
+  if (id.indexOf('@') >= 0) {
+    id = encodeURIComponent(id)
+  }
   _.each(domainMapping, (idList, domainName) => {
     if (idList.indexOf(id) >= 0) {
       domain = domainName;
-      return false;
     }
   });
   return domain;
 }
 
 function getHandcarBankId(contentLibraryId) {
-  let domain = getDomain(contentLibraryId);
+  let domain = getDomain(contentLibraryId).toLowerCase();
   return handcarDomainBanks[domain];
 }
 
 function getHandcarFamilyId(contentLibraryId) {
-  let domain = getDomain(contentLibraryId);
+  let domain = getDomain(contentLibraryId).toLowerCase();
   return handcarDomainFamilies[domain];
 }
 // ==========
@@ -64,7 +66,7 @@ router.delete('/banks/:bankId/missions/:missionId', deleteMission);
 router.put('/banks/:bankId/missions/:missionId', editMission);
 router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
 router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
-router.put('/banks/:bankId/offereds/:offeredId', editOffered);
+// router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
 router.get('/departments/:departmentName/library', getDepartmentLibraryId);
 router.get('/hierarchies/:nodeId/children', getNodeChildren);
@@ -244,7 +246,8 @@ function getOutcomes(req, res) {
     options = {
       path: `/learning/objectivebanks/${bankId}/objectives?genustypeid=mc3-objective%3Amc3.learning.outcome%40MIT-OEIT`
     };
-
+  console.log(bankId);
+  console.log(getDomain(req.params.contentLibraryId));
   // do this async-ly
   handcar(options)
   .then( function(result) {
@@ -335,33 +338,51 @@ function editMission(req, res) {
     data: req.body,
     method: 'PUT',
     path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}`
-  };
+  }, updatedMission;
 
   qbank(options)
   .then( function(result) {
-    return res.send(result);             // this line sends back the response to the client
+    updatedMission = _.assign({}, JSON.parse(result));
+    // edit an assessment offered, i.e. start date / deadline
+    let options = {
+      data: {
+        startTime: req.body.startTime,
+        deadline: req.body.deadline
+      },
+      method: 'PUT',
+      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.body.assessmentOfferedId}`
+    };
+
+    return qbank(options)
+  })
+  .then( function(result) {
+    result = JSON.parse(result);
+    updatedMission.startTime = result.startTime;
+    updatedMission.deadline = result.deadline;
+    updatedMission.assessmentOfferedId = result.id;
+    return res.send(updatedMission);             // this line sends back the response to the client
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
   });
 }
-
-function editOffered(req, res) {
-  // edit an assessment offered, i.e. start date / deadline
-  let options = {
-    data: req.body,
-    method: 'PUT',
-    path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}`
-  };
-
-  qbank(options)
-  .then( function(result) {
-    return res.send(result);             // this line sends back the response to the client
-  })
-  .catch( function(err) {
-    return res.status(err.statusCode).send(err.message);
-  });
-}
+//
+// function editOffered(req, res) {
+//   // edit an assessment offered, i.e. start date / deadline
+//   let options = {
+//     data: req.body,
+//     method: 'PUT',
+//     path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}`
+//   };
+//
+//   qbank(options)
+//   .then( function(result) {
+//     return res.send(result);             // this line sends back the response to the client
+//   })
+//   .catch( function(err) {
+//     return res.status(err.statusCode).send(err.message);
+//   });
+// }
 
 function setAuthorizations(req, res) {
   // bulk-set the authorizations
@@ -421,8 +442,8 @@ function setNodeChildren(req, res) {
 }
 
 function getDepartmentLibraryId(req, res) {
-  if (_.keys(domainMapping).indexOf(req.params.departmentName) >= 0) {
-    return res.send(domainMapping[req.params.departmentName][0]);
+  if (_.keys(domainMapping).indexOf(req.params.departmentName.toLowerCase()) >= 0) {
+    return res.send(domainMapping[req.params.departmentName.toLowerCase()][0]);
   } else {
     return res.send('Unknown department');
   }
