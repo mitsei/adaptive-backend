@@ -9,6 +9,8 @@ let credentials = require('../credentials');
 let qbank = require('../lib/qBankFetch')(credentials);
 let handcar = require('../lib/handcarFetch')(credentials);
 
+let SHARED_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-shared-missions%40ODL.MIT.EDU"
+
 let domainMapping = {
   'algebra': ['assessment.Bank%3A57279fb9e7dde086d01b93ef%40bazzim.MIT.EDU', 'mc3-objectivebank%3A2823%40MIT-OEIT'],
   'accounting': ['assessment.Bank%3A57279fbce7dde086c7fe20ff%40bazzim.MIT.EDU', 'mc3-objectivebank%3A2821%40MIT-OEIT'],
@@ -61,7 +63,7 @@ router.get('/banks/:bankId', getBankDetails);
 router.put('/banks/:bankId', editBankDetails);
 router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
-router.post('/banks/:bankId/missions', addMission);
+router.post('/banks/:bankId/missions', addSharedMission);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
 router.put('/banks/:bankId/missions/:missionId', editMission);
 router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
@@ -277,25 +279,74 @@ function getRelationships(req, res) {
   });
 }
 
-function addMission(req, res) {
+function addSharedMission(req, res) {
   // create assessment + offered
-  let assessmentOptions = {
-    data: req.body,
-    method: 'POST',
-    path: `assessment/banks/${req.params.bankId}/assessments`
-  },
-    assessment = {};
+  // This is the endpoint for creating a shared mission that
+  //   all students in the class need to take
+  // It creates the mission in a child bank of
+  //   genusTypeId: "assessment-bank-genus%3Afbw-shared-missions%40ODL.MIT.EDU"
+  let sharedBankOptions = {
+    path: `assessment/hierarchies/nodes/${req.params.bankId}/children`
+  }, assessment = {}, sharedBank = {};
 
-  qbank(assessmentOptions)
+  qbank(sharedBankOptions)
   .then( function(result) {
-    assessment = JSON.parse(result);
-    // now create the offered
-    let offeredOption = {
+    let children = JSON.parse(result).data.results
+    if (children.length == 0) {
+      // create the shared mission bank
+      let createSharedBankOptions = {
+        method: 'POST',
+        path: 'assessment/banks',
+        data: {
+          name: 'Shared missions bank',
+          description: 'For all students in a class',
+          genusTypeId: SHARED_MISSIONS_GENUS
+        }
+      };
+
+      return qbank(createSharedBankOptions)
+      .then( function (newBank) {
+        sharedBank = JSON.parse(newBank);
+        let createChildrenOptions = {
+          method: 'POST',
+          path: `assessment/hierarchies/nodes/${req.params.bankId}/children`,
+          data: {
+            ids: [sharedBank.id]
+          }
+        };
+        // no existing children, so can just stick this as the first child
+        return qbank(createChildrenOptions)
+      })
+      .then( function (updatedChildren) {
+        return Q.when(sharedBank.id)
+      })
+    } else {
+      // just create the assessment in the child bank with genus SHARED_MISSIONS_GENUS
+      let sharedBank = _.find(children, {genusTypeId: SHARED_MISSIONS_GENUS});
+
+      return Q.when(sharedBank.id)
+    }
+  })
+  .then( function (sharedBankId) {
+    console.log(`trying to create a mission in ${sharedBankId}`)
+    let assessmentOptions = {
       data: req.body,
       method: 'POST',
-      path: `assessment/banks/${req.params.bankId}/assessments/${assessment.id}/assessmentsoffered`
-    };
-    return qbank(offeredOption);
+      path: `assessment/banks/${sharedBankId}/assessments`
+    },
+      assessment = {};
+
+    return qbank(assessmentOptions)
+      .then( function(result) {
+        assessment = JSON.parse(result);
+        // now create the offered
+        let offeredOption = {
+          data: req.body,
+          method: 'POST',
+          path: `assessment/banks/${sharedBankId}/assessments/${assessment.id}/assessmentsoffered`
+        };
+        return qbank(offeredOption);
+      })
   })
   .then( (result) => {
     let offered = JSON.parse(result);
