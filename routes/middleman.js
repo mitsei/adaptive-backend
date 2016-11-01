@@ -6,10 +6,23 @@ let Q = require('q');
 let _ = require('lodash');
 
 let credentials = require('../credentials');
+
+// use these two modified fetch libraries instead of those in
+// fbw-utils because we know these (request-promise) work with Express
+// and qbank signing in Node
 let qbank = require('../lib/qBankFetch')(credentials);
 let handcar = require('../lib/handcarFetch')(credentials);
 
+var fbwUtils = require('fbw-utils')(credentials);
+var ConvertDate2Dict = fbwUtils.ConvertDateToDictionary;
+
+// these need to be the same constant value in the client-apps, too
 let SHARED_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-shared-missions%40ODL.MIT.EDU"
+let PRIVATE_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-private-missions%40ODL.MIT.EDU"
+
+let STUDENT_TAKING_AUTHZ_FUNCTIONS = ['assessment.AssessmentTaken%3Acreate%40ODL.MIT.EDU',
+                                      'assessment.AssessmentTaken%3Alookup%40ODL.MIT.EDU',
+                                      'assessment.Assessment%3Atake%40ODL.MIT.EDU']
 
 let domainMapping = {
   'algebra': ['assessment.Bank%3A57279fb9e7dde086d01b93ef%40bazzim.MIT.EDU', 'mc3-objectivebank%3A2823%40MIT-OEIT'],
@@ -55,6 +68,14 @@ function getHandcarFamilyId(contentLibraryId) {
   // API to receive requests from client side
   // @cole: help needed
 // ==========
+
+// utility method to generate the private bank alias. Needs to match
+// the method in the client-side apps as well...should be in a
+// shared library.
+function privateBankAlias(termBankId, username) {
+  // should return something like "private-bank%3A1234567890abcdef12345678-S12345678.acc.edu%40ODL.MIT.EDU"
+  return `private-bank%3A${termBankId.match(/:(.*)@/)[1]}-${username.replace('@', '.')}%40ODL.MIT.EDU`
+}
 
 // utility method to get the sharedBankId for CRUD on shared missions...
 function getSharedBankId(bankId) {
@@ -102,6 +123,119 @@ function getSharedBankId(bankId) {
   })
 }
 
+// utility method to get the private bank of a student, or
+// to set it up / create the alias / set up the hierarchy / set student authz
+//    class term bank
+//         |-----Private user banks (aliased per method above)
+//         |          |
+//         |-----Shared bank
+function getPrivateBankId(bankId, username) {
+  // assumption is that the shared bank already exists
+  // the private bank may or may not exist
+  let privateBankAliasId = privateBankAlias(bankId, username),
+    privateBankTestOptions = {
+      path: `assessment/banks/${privateBankAliasId}`
+    }, privateBank = {}, currentChildren = [];
+
+  return qbank(privateBankTestOptions)
+  .then( function (result) {
+    // private bank exists
+    return Q.when(JSON.parse(result).id)
+  })
+  .catch( function (error) {
+    // let's create the bank!
+    // create the private bank and set authz / create hierarchies
+    let createPrivateBankOptions = {
+      method: 'POST',
+      path: 'assessment/banks',
+      data: {
+        name: `Private mission bank for ${username}`,
+        description: `${username}'s missions for bank ${bankId}`,
+        genusTypeId: PRIVATE_MISSIONS_GENUS,
+        aliasId: privateBankAliasId
+      }
+    };
+
+    return qbank(createPrivateBankOptions)
+    .then( function (newBank) {
+      privateBank = JSON.parse(newBank);
+      // get the original bankId's current children first
+      // and append the private bankId
+      let getCurrentChildrenOptions = {
+        path: `assessment/hierarchies/nodes/${bankId}/children`
+      }
+      return qbank(getCurrentChildrenOptions)
+    })
+    .then( function (children) {
+      currentChildren = JSON.parse(children).data.results
+      currentChildren = _.map(currentChildren, 'id')
+      currentChildren = currentChildren.concat(privateBank.id)
+      let createChildrenOptions = {
+        method: 'POST',
+        path: `assessment/hierarchies/nodes/${bankId}/children`,
+        data: {
+          ids: currentChildren
+        }
+      }
+      return qbank(createChildrenOptions)
+    })
+    .then( function (updatedChildren) {
+      // now add the shared bank as a child of the private bank
+      return getSharedBankId(bankId)
+    })
+    .then( function (sharedBankId) {
+      let addSharedBankToPrivateBankOptions = {
+        method: 'POST',
+        path: `assessment/hierarchies/nodes/${privateBank.id}/children`,
+        data: {
+          ids: [sharedBankId]
+        }
+      }
+      return qbank(addSharedBankToPrivateBankOptions)
+    })
+    .then( function (updatedChildren) {
+      // now configure authz so students can "take" in the private bank
+      let now = new Date(),
+        endDate = ConvertDate2Dict(now),
+        privateBankAuthzOptions = {
+          method: 'POST',
+          path: `authorization/authorizations`,
+          data: {
+            bulk: []
+          }
+        }
+      endDate.month = endDate.month + 6;
+
+      if (endDate.month > 12) {
+        endDate.month = endDate.month - 12;
+        endDate.year++;
+      }
+
+      if (endDate.month == 2 && endDate.day > 28) {
+        endDate.day = 28;
+      }
+
+      if ([4, 6, 9, 11].indexOf(endDate.month) >= 0 && endDate.day == 31) {
+        endDate.day = 30;
+      }
+
+      _.each(STUDENT_TAKING_AUTHZ_FUNCTIONS, (functionId) => {
+        privateBankAuthzOptions.data.bulk.push({
+          agentId: username,
+          endDate: endDate,
+          qualifierId: privateBank.id,
+          functionId: functionId
+        })
+      })
+
+      return qbank(privateBankAuthzOptions)
+    })
+    .then( function (authzResponse) {
+      return Q.when(privateBank.id)
+    })
+  })
+}
+
 // so the full path for this endpoint is /middleman/...
 router.post('/authorizations', setAuthorizations);
 router.get('/banks', getBanks);
@@ -110,6 +244,7 @@ router.put('/banks/:bankId', editBankDetails);
 router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
 router.post('/banks/:bankId/missions', addSharedMission);
+router.post('/banks/:bankId/personalmissions', addPersonalizedMission);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
 router.put('/banks/:bankId/missions/:missionId', editMission);
 router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
@@ -294,8 +429,6 @@ function getOutcomes(req, res) {
     options = {
       path: `/learning/objectivebanks/${bankId}/objectives?genustypeid=mc3-objective%3Amc3.learning.outcome%40MIT-OEIT`
     };
-  console.log(bankId);
-  console.log(getDomain(req.params.contentLibraryId));
   // do this async-ly
   handcar(options)
   .then( function(result) {
@@ -350,6 +483,47 @@ function addSharedMission(req, res) {
           data: req.body,
           method: 'POST',
           path: `assessment/banks/${sharedBankId}/assessments/${assessment.id}/assessmentsoffered`
+        };
+        return qbank(offeredOption);
+      })
+  })
+  .then( (result) => {
+    let offered = JSON.parse(result);
+    assessment.startTime = offered.startTime;
+    assessment.deadline = offered.deadline;
+    assessment.assessmentOfferedId = offered.id;
+    return res.send(assessment);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function addPersonalizedMission(req, res) {
+  // create assessment + offered in a student's private bank
+  // This is the endpoint for creating a personalized mission that
+  //   only a single student has authorization to take
+  // It creates the mission in a child bank of
+  //   genusTypeId: "assessment-bank-genus%3Afbw-private-missions%40ODL.MIT.EDU"
+  let assessment = {};
+
+  Q.when(getPrivateBankId(req.params.bankId, req.body.username))
+  .then( function (privateBankId) {
+    let assessmentOptions = {
+      data: req.body,
+      method: 'POST',
+      path: `assessment/banks/${privateBankId}/assessments`
+    },
+      assessment = {};
+
+    return qbank(assessmentOptions)
+      .then( function(result) {
+        assessment = JSON.parse(result);
+        // now create the offered
+        let offeredOption = {
+          data: req.body,
+          method: 'POST',
+          path: `assessment/banks/${privateBankId}/assessments/${assessment.id}/assessmentsoffered`
         };
         return qbank(offeredOption);
       })
