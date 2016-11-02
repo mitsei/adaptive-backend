@@ -533,24 +533,24 @@ function addPersonalizedMission(req, res) {
   .then( function (authzResults) {
     // for each private bank Id, create the mission
     let promises = []
-    _.each(allPrivateBankIds, function (privateBankId) {
+    _.each(allPrivateBankIds, function (privateBankId, index) {
       let assessmentOptions = {
-        data: req.body,
+        data: req.body[index],
         method: 'POST',
         path: `assessment/banks/${privateBankId}/assessments`
-      }, assessment = {};
+      };
       promises.push(qbank(assessmentOptions))
     })
-
     return Q.all(promises)
   })
   .then( function (assessments) {
     let promises = []
     // now create the offereds
     console.log('creating offereds')
-    _.each(assessments, function (assessment) {
+    _.each(assessments, function (assessment, index) {
+      assessment = JSON.parse(assessment)
       let offeredOption = {
-        data: req.body,
+        data: req.body[index],
         method: 'POST',
         path: `assessment/banks/${assessment.bankId}/assessments/${assessment.id}/assessmentsoffered`
       };
