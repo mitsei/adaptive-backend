@@ -472,8 +472,7 @@ function addSharedMission(req, res) {
       data: req.body,
       method: 'POST',
       path: `assessment/banks/${sharedBankId}/assessments`
-    },
-      assessment = {};
+    };
 
     return qbank(assessmentOptions)
       .then( function(result) {
