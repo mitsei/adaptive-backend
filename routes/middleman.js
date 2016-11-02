@@ -175,7 +175,7 @@ function getSharedBankId(bankId) {
         path: 'assessment/banks',
         data: {
           name: 'Shared missions bank',
-          description: 'For all students in a class',
+          description: `For all students in a class: ${bankId}`,
           genusTypeId: SHARED_MISSIONS_GENUS
         }
       };
@@ -562,7 +562,7 @@ function addPersonalizedMission(req, res) {
     return Q.all(promises)
   })
   .then( (results) => {
-    console.log(results)
+
     _.each(results, function (offered, index) {
       offered = JSON.parse(offered)
       allMissions[index].startTime = offered.startTime
