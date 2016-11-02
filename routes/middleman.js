@@ -549,7 +549,6 @@ function addPersonalizedMission(req, res) {
   .then( function (assessments) {
     let promises = []
     // now create the offereds
-    console.log('creating offereds')
     _.each(assessments, function (assessment, index) {
       assessment = JSON.parse(assessment)
       allMissions.push(assessment)
@@ -563,7 +562,9 @@ function addPersonalizedMission(req, res) {
     return Q.all(promises)
   })
   .then( (results) => {
+    console.log(results)
     _.each(results, function (offered, index) {
+      offered = JSON.parse(offered)
       allMissions[index].startTime = offered.startTime
       allMissions[index].deadline = offered.deadline
       allMissions[index].assessmentOfferedId = offered.id
