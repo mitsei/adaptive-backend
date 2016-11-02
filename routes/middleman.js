@@ -69,12 +69,92 @@ function getHandcarFamilyId(contentLibraryId) {
   // @cole: help needed
 // ==========
 
+function addStudentAuthz(bankId, username) {
+  // now configure authz so students can "take" in the private bank
+  let now = new Date(),
+    endDate = ConvertDate2Dict(now),
+    privateBankAuthzOptions = {
+      method: 'POST',
+      path: `authorization/authorizations`,
+      data: {
+        bulk: []
+      }
+    }
+  endDate.month = endDate.month + 6;
+
+  if (endDate.month > 12) {
+    endDate.month = endDate.month - 12;
+    endDate.year++;
+  }
+
+  if (endDate.month == 2 && endDate.day > 28) {
+    endDate.day = 28;
+  }
+
+  if ([4, 6, 9, 11].indexOf(endDate.month) >= 0 && endDate.day == 31) {
+    endDate.day = 30;
+  }
+
+  _.each(STUDENT_TAKING_AUTHZ_FUNCTIONS, (functionId) => {
+    privateBankAuthzOptions.data.bulk.push({
+      agentId: username,
+      endDate: endDate,
+      qualifierId: bankId,
+      functionId: functionId
+    })
+  })
+
+  return qbank(privateBankAuthzOptions)
+}
+
+function linkPrivateBanksIntoTerm(privateBankIds, termBankId) {
+  // get the original bankId's current children first
+  // and append the private bankIds
+  let getCurrentChildrenOptions = {
+    path: `assessment/hierarchies/nodes/${termBankId}/children`
+  }, currentChildren = []
+  return qbank(getCurrentChildrenOptions)
+  .then( function (children) {
+    currentChildren = JSON.parse(children).data.results
+    currentChildren = _.map(currentChildren, 'id')
+    currentChildren = _.uniq(currentChildren.concat(privateBankIds))
+    let createChildrenOptions = {
+      method: 'POST',
+      path: `assessment/hierarchies/nodes/${termBankId}/children`,
+      data: {
+        ids: currentChildren
+      }
+    }
+
+    return qbank(createChildrenOptions)
+  })
+  .then( function (updatedChildren) {
+    // now add the shared bank as a child of the private bank
+    return getSharedBankId(termBankId)
+  })
+  .then( function (sharedBankId) {
+    let promises = []
+    _.each(privateBankIds, function (privateBankId) {
+      let addSharedBankToPrivateBankOptions = {
+        method: 'POST',
+        path: `assessment/hierarchies/nodes/${privateBankId}/children`,
+        data: {
+          ids: [sharedBankId]
+        }
+      }
+      promises.push(qbank(addSharedBankToPrivateBankOptions))
+    })
+    return Q.all(promises)
+  })
+}
+
 // utility method to generate the private bank alias. Needs to match
 // the method in the client-side apps as well...should be in a
 // shared library.
 function privateBankAlias(termBankId, username) {
   // should return something like "private-bank%3A1234567890abcdef12345678-S12345678.acc.edu%40ODL.MIT.EDU"
-  return `private-bank%3A${termBankId.match(/:(.*)@/)[1]}-${username.replace('@', '.')}%40ODL.MIT.EDU`
+  termBankId = encodeURIComponent(termBankId)
+  return `private-bank%3A${termBankId.match(/%3A(.*)%40/)[1]}-${username.replace('@', '.')}%40ODL.MIT.EDU`
 }
 
 // utility method to get the sharedBankId for CRUD on shared missions...
@@ -132,19 +212,21 @@ function getSharedBankId(bankId) {
 function getPrivateBankId(bankId, username) {
   // assumption is that the shared bank already exists
   // the private bank may or may not exist
+  // this method does NOT link the private bank into the hierarchy
+  // we need to do that in bulk to prevent collisions
   let privateBankAliasId = privateBankAlias(bankId, username),
     privateBankTestOptions = {
       path: `assessment/banks/${privateBankAliasId}`
     }, privateBank = {}, currentChildren = [];
-
   return qbank(privateBankTestOptions)
-  .then( function (result) {
-    // private bank exists
-    return Q.when(JSON.parse(result).id)
+  .then( function (bank) {
+    privateBank = JSON.parse(bank)
+    return Q.when(privateBank.id)
   })
   .catch( function (error) {
-    // let's create the bank!
-    // create the private bank and set authz / create hierarchies
+    // qbank(privateBankTestOptions) might throw a 500 if the private bank
+    // doesn't exist -- so let's create the bank!
+    // create the private bank and set authz
     let createPrivateBankOptions = {
       method: 'POST',
       path: 'assessment/banks',
@@ -159,78 +241,9 @@ function getPrivateBankId(bankId, username) {
     return qbank(createPrivateBankOptions)
     .then( function (newBank) {
       privateBank = JSON.parse(newBank);
-      // get the original bankId's current children first
-      // and append the private bankId
-      let getCurrentChildrenOptions = {
-        path: `assessment/hierarchies/nodes/${bankId}/children`
-      }
-      return qbank(getCurrentChildrenOptions)
-    })
-    .then( function (children) {
-      currentChildren = JSON.parse(children).data.results
-      currentChildren = _.map(currentChildren, 'id')
-      currentChildren = currentChildren.concat(privateBank.id)
-      let createChildrenOptions = {
-        method: 'POST',
-        path: `assessment/hierarchies/nodes/${bankId}/children`,
-        data: {
-          ids: currentChildren
-        }
-      }
-      return qbank(createChildrenOptions)
+      return Q.when(addStudentAuthz(privateBank.id, username))
     })
     .then( function (updatedChildren) {
-      // now add the shared bank as a child of the private bank
-      return getSharedBankId(bankId)
-    })
-    .then( function (sharedBankId) {
-      let addSharedBankToPrivateBankOptions = {
-        method: 'POST',
-        path: `assessment/hierarchies/nodes/${privateBank.id}/children`,
-        data: {
-          ids: [sharedBankId]
-        }
-      }
-      return qbank(addSharedBankToPrivateBankOptions)
-    })
-    .then( function (updatedChildren) {
-      // now configure authz so students can "take" in the private bank
-      let now = new Date(),
-        endDate = ConvertDate2Dict(now),
-        privateBankAuthzOptions = {
-          method: 'POST',
-          path: `authorization/authorizations`,
-          data: {
-            bulk: []
-          }
-        }
-      endDate.month = endDate.month + 6;
-
-      if (endDate.month > 12) {
-        endDate.month = endDate.month - 12;
-        endDate.year++;
-      }
-
-      if (endDate.month == 2 && endDate.day > 28) {
-        endDate.day = 28;
-      }
-
-      if ([4, 6, 9, 11].indexOf(endDate.month) >= 0 && endDate.day == 31) {
-        endDate.day = 30;
-      }
-
-      _.each(STUDENT_TAKING_AUTHZ_FUNCTIONS, (functionId) => {
-        privateBankAuthzOptions.data.bulk.push({
-          agentId: username,
-          endDate: endDate,
-          qualifierId: privateBank.id,
-          functionId: functionId
-        })
-      })
-
-      return qbank(privateBankAuthzOptions)
-    })
-    .then( function (authzResponse) {
       return Q.when(privateBank.id)
     })
   })
@@ -472,8 +485,7 @@ function addSharedMission(req, res) {
       data: req.body,
       method: 'POST',
       path: `assessment/banks/${sharedBankId}/assessments`
-    },
-      assessment = {};
+    };
 
     return qbank(assessmentOptions)
       .then( function(result) {
@@ -500,40 +512,54 @@ function addSharedMission(req, res) {
 }
 
 function addPersonalizedMission(req, res) {
-  // create assessment + offered in a student's private bank
+  // create assessment + offered in a student's private bank, in bulk
+  // This endpoint expects an array of student / section objects
   // This is the endpoint for creating a personalized mission that
   //   only a single student has authorization to take
   // It creates the mission in a child bank of
   //   genusTypeId: "assessment-bank-genus%3Afbw-private-missions%40ODL.MIT.EDU"
-  let assessment = {};
+  let allPrivateBankIds = [],
+    privateBankPromises = [];
+  _.each(req.body, function (student) {
+    privateBankPromises.push(Q.when(getPrivateBankId(req.params.bankId, student.username)))
+  })
+  Q.all(privateBankPromises)
+  .then( function (privateBankIds) {
+    // then link the private banks into the term bank hierarchy so permissions
+    // work out...
+    allPrivateBankIds = privateBankIds
+    return Q.when(linkPrivateBanksIntoTerm(allPrivateBankIds, req.params.bankId))
+  })
+  .then( function (authzResults) {
+    // for each private bank Id, create the mission
+    let promises = []
+    _.each(allPrivateBankIds, function (privateBankId) {
+      let assessmentOptions = {
+        data: req.body,
+        method: 'POST',
+        path: `assessment/banks/${privateBankId}/assessments`
+      }, assessment = {};
+      promises.push(qbank(assessmentOptions))
+    })
 
-  Q.when(getPrivateBankId(req.params.bankId, req.body.username))
-  .then( function (privateBankId) {
-    let assessmentOptions = {
-      data: req.body,
-      method: 'POST',
-      path: `assessment/banks/${privateBankId}/assessments`
-    },
-      assessment = {};
-
-    return qbank(assessmentOptions)
-      .then( function(result) {
-        assessment = JSON.parse(result);
-        // now create the offered
-        let offeredOption = {
-          data: req.body,
-          method: 'POST',
-          path: `assessment/banks/${privateBankId}/assessments/${assessment.id}/assessmentsoffered`
-        };
-        return qbank(offeredOption);
-      })
+    return Q.all(promises)
+  })
+  .then( function (assessments) {
+    let promises = []
+    // now create the offereds
+    console.log('creating offereds')
+    _.each(assessments, function (assessment) {
+      let offeredOption = {
+        data: req.body,
+        method: 'POST',
+        path: `assessment/banks/${assessment.bankId}/assessments/${assessment.id}/assessmentsoffered`
+      };
+      promises.push(qbank(offeredOption))
+    })
+    return Q.all(promises)
   })
   .then( (result) => {
-    let offered = JSON.parse(result);
-    assessment.startTime = offered.startTime;
-    assessment.deadline = offered.deadline;
-    assessment.assessmentOfferedId = offered.id;
-    return res.send(assessment);             // this line sends back the response to the client
+    return res.send('Done creating personalized missions');             // this line sends back the response to the client
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
