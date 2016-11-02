@@ -153,7 +153,9 @@ function linkPrivateBanksIntoTerm(privateBankIds, termBankId) {
 // shared library.
 function privateBankAlias(termBankId, username) {
   // should return something like "private-bank%3A1234567890abcdef12345678-S12345678.acc.edu%40ODL.MIT.EDU"
-  termBankId = encodeURIComponent(termBankId)
+  if (termBankId.indexOf('@') >= 0) {
+    termBankId = encodeURIComponent(termBankId)
+  }
   return `private-bank%3A${termBankId.match(/%3A(.*)%40/)[1]}-${username.replace('@', '.')}%40ODL.MIT.EDU`
 }
 
@@ -217,7 +219,7 @@ function getPrivateBankId(bankId, username) {
   let privateBankAliasId = privateBankAlias(bankId, username),
     privateBankTestOptions = {
       path: `assessment/banks/${privateBankAliasId}`
-    }, privateBank = {}, currentChildren = [];
+    }, privateBank = {};
   return qbank(privateBankTestOptions)
   .then( function (bank) {
     privateBank = JSON.parse(bank)
@@ -519,6 +521,7 @@ function addPersonalizedMission(req, res) {
   // It creates the mission in a child bank of
   //   genusTypeId: "assessment-bank-genus%3Afbw-private-missions%40ODL.MIT.EDU"
   let allPrivateBankIds = [],
+    allMissions = [],
     privateBankPromises = [];
   _.each(req.body, function (student) {
     privateBankPromises.push(Q.when(getPrivateBankId(req.params.bankId, student.username)))
@@ -549,6 +552,7 @@ function addPersonalizedMission(req, res) {
     console.log('creating offereds')
     _.each(assessments, function (assessment, index) {
       assessment = JSON.parse(assessment)
+      allMissions.push(assessment)
       let offeredOption = {
         data: req.body[index],
         method: 'POST',
@@ -558,8 +562,13 @@ function addPersonalizedMission(req, res) {
     })
     return Q.all(promises)
   })
-  .then( (result) => {
-    return res.send('Done creating personalized missions');             // this line sends back the response to the client
+  .then( (results) => {
+    _.each(results, function (offered, index) {
+      allMissions[index].startTime = offered.startTime
+      allMissions[index].deadline = offered.deadline
+      allMissions[index].assessmentOfferedId = offered.id
+    })
+    return res.send(allMissions);             // this line sends back the response to the client
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
