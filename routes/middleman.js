@@ -361,13 +361,19 @@ function getBankDetails(req, res) {
 function getBankItems(req, res) {
   // Gets you all of the items in a bank
   let options = {
-    path: `assessment/banks/${req.params.bankId}/items?raw&unrandomized`
+    path: `assessment/banks/${req.params.bankId}/items?raw`
   };
 
   // do this async-ly
   qbank(options)
   .then( function(result) {
     result = JSON.parse(result);
+    // have to sort the choices, otherwise they'll be randomized here
+    // could also do this via the &unrandomized flag in the request above,
+    // but that adds server response time
+    _.each(result, function (item) {
+      item.question.choices = _.sortBy(item.question.choices, 'name')
+    })
     return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
