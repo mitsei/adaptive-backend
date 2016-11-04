@@ -408,7 +408,6 @@ function getMissionResults(req, res) {
   // do this async-ly
   qbank(options)
   .then( function(result) {
-    result = JSON.parse(result);
     return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
@@ -439,7 +438,7 @@ function getMissions(req, res) {
     assessments = result;
     _.each(assessments, (assessment) => {
       let offeredOption = {
-        path: `assessment/banks/${req.params.bankId}/assessments/${assessment.id}/assessmentsoffered`
+        path: `assessment/banks/${req.params.bankId}/assessments/${assessment.id}/assessmentsoffered?raw`
       };
       offeredsOptions.push(qbank(offeredOption));
     });
@@ -448,9 +447,9 @@ function getMissions(req, res) {
   .then( (responses) => {
     _.each(responses, (responseString, index) => {
       let response = JSON.parse(responseString);
-      assessments[index].startTime = response.data.results[0].startTime;
-      assessments[index].deadline = response.data.results[0].deadline;
-      assessments[index].assessmentOfferedId = response.data.results[0].id;
+      assessments[index].startTime = response[0].startTime;
+      assessments[index].deadline = response[0].deadline;
+      assessments[index].assessmentOfferedId = response[0].id;
     })
     return res.send(assessments);             // this line sends back the response to the client
   })
