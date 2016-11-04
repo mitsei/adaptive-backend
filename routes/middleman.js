@@ -19,6 +19,8 @@ var ConvertDate2Dict = fbwUtils.ConvertDateToDictionary;
 // these need to be the same constant value in the client-apps, too
 let SHARED_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-shared-missions%40ODL.MIT.EDU"
 let PRIVATE_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-private-missions%40ODL.MIT.EDU"
+let HOMEWORK_MISSION_GENUS = "assessment-genus%3Afbw-homework-mission%40ODL.MIT.EDU"
+let TEST_FLIGHT_MISSION_GENUS = "assessment-genus%3Afbw-in-class-mission%40ODL.MIT.EDU"
 
 let STUDENT_TAKING_AUTHZ_FUNCTIONS = ['assessment.AssessmentTaken%3Acreate%40ODL.MIT.EDU',
                                       'assessment.AssessmentTaken%3Alookup%40ODL.MIT.EDU',
@@ -108,26 +110,16 @@ function addStudentAuthz(bankId, username) {
 }
 
 function linkPrivateBanksIntoTerm(privateBankIds, termBankId) {
-  // get the original bankId's current children first
-  // and append the private bankIds
-  let getCurrentChildrenOptions = {
-    path: `assessment/hierarchies/nodes/${termBankId}/children`
-  }, currentChildren = []
-  return qbank(getCurrentChildrenOptions)
-  .then( function (children) {
-    currentChildren = JSON.parse(children).data.results
-    currentChildren = _.map(currentChildren, 'id')
-    currentChildren = _.uniq(currentChildren.concat(privateBankIds))
-    let createChildrenOptions = {
+  // append the private bankIds
+  let createChildrenOptions = {
       method: 'POST',
       path: `assessment/hierarchies/nodes/${termBankId}/children`,
       data: {
-        ids: currentChildren
+        ids: privateBankIds
       }
     }
 
-    return qbank(createChildrenOptions)
-  })
+  return qbank(createChildrenOptions)
   .then( function (updatedChildren) {
     // now add the shared bank as a child of the private bank
     return getSharedBankId(termBankId)
@@ -159,51 +151,91 @@ function privateBankAlias(termBankId, username) {
   return `private-bank%3A${termBankId.match(/%3A(.*)%40/)[1]}-${username.replace('@', '.')}%40ODL.MIT.EDU`
 }
 
+function sharedBankAlias(termBankId) {
+  // should return something like "shared-bank%3A1234567890abcdef12345678%40ODL.MIT.EDU"
+  if (termBankId.indexOf('@') >= 0) {
+    termBankId = encodeURIComponent(termBankId)
+  }
+  return `shared-bank%3A${termBankId.match(/%3A(.*)%40/)[1]}%40ODL.MIT.EDU`
+}
+
 // utility method to get the sharedBankId for CRUD on shared missions...
-function getSharedBankId(bankId) {
-  let sharedBankOptions = {
-    path: `assessment/hierarchies/nodes/${bankId}/children`
-  }, sharedBank = {};
-
-  return qbank(sharedBankOptions)
-  .then( function(result) {
-    let children = JSON.parse(result).data.results
-    if (children.length == 0) {
-      // create the shared mission bank
-      let createSharedBankOptions = {
-        method: 'POST',
-        path: 'assessment/banks',
-        data: {
-          name: 'Shared missions bank',
-          description: `For all students in a class: ${bankId}`,
-          genusTypeId: SHARED_MISSIONS_GENUS
-        }
-      };
-
-      return qbank(createSharedBankOptions)
-      .then( function (newBank) {
-        sharedBank = JSON.parse(newBank);
-        let createChildrenOptions = {
-          method: 'POST',
-          path: `assessment/hierarchies/nodes/${bankId}/children`,
-          data: {
-            ids: [sharedBank.id]
-          }
-        };
-        // no existing children, so can just stick this as the first child
-        return qbank(createChildrenOptions)
-      })
-      .then( function (updatedChildren) {
-        return Q.when(sharedBank.id)
-      })
-    } else {
-      // just create the assessment in the child bank with genus SHARED_MISSIONS_GENUS
-      let sharedBank = _.find(children, {genusTypeId: SHARED_MISSIONS_GENUS});
-
-      return Q.when(sharedBank.id)
+function createSharedBank(bankId) {
+  // create the shared mission bank with alias
+  let createSharedBankOptions = {
+    method: 'POST',
+    path: 'assessment/banks',
+    data: {
+      name: 'Shared missions bank',
+      description: `For all students in a class: ${bankId}`,
+      genusTypeId: SHARED_MISSIONS_GENUS,
+      aliasId: sharedBankAlias(bankId)
     }
+  };
+
+  return qbank(createSharedBankOptions)
+  .then((res) => {return res.json()})
+  .then( function (newBank) {
+    return Q.when(newBank)
   })
 }
+
+function linkSharedBankToTerm(sharedBankId, termBankId) {
+  // append the shared bankId if it isn't already linked
+  let sharedBankOptions = {
+    path: `assessment/hierarchies/nodes/${termBankId}/children`
+  };
+
+  return qbank(sharedBankOptions)
+  .then( (result) => {
+    let children = JSON.parse(result).data.results
+    if (children.length == 0 || !_.find(children, {genusTypeId: SHARED_MISSIONS_GENUS})) {
+      let createChildrenOptions = {
+          method: 'POST',
+          path: `assessment/hierarchies/nodes/${termBankId}/children`,
+          data: {
+            ids: [sharedBankId]
+          }
+        };
+      return qbank(createChildrenOptions)
+    } else {
+      return Q.when('shared bank is already a child')
+    }
+  })
+  .then( function (result) {
+    return Q.when('done')
+  })
+}
+
+// utility method to get the sharedBankId for CRUD on shared missions...
+function getSharedBankId(bankId) {
+  let getSharedBankOptions = {
+    path: `assessment/banks/${sharedBankAlias(bankId)}`
+  }, sharedBank = {};
+
+  return qbank(getSharedBankOptions)
+  .then((result) => {
+    sharedBank = JSON.parse(result)
+    // let's now make sure the sharedBank is part of the
+    // termBank hierarchy
+    return Q.when(linkSharedBankToTerm(sharedBank.id, bankId))
+  })
+  .then((result) => {
+    return Q.when(sharedBank.id)
+  })
+  .catch((error) => {
+    // shared bank may not exist
+    return Q.when(createSharedBank(bankId))
+    .then((result) => {
+      sharedBank = result
+      return Q.when(linkSharedBankToTerm(sharedBank.id, bankId))
+    })
+    .then(() => {
+      return Q.when(sharedBank.id)
+    })
+  })
+}
+
 
 // utility method to get the private bank of a student, or
 // to set it up / create the alias / set up the hierarchy / set student authz
@@ -329,14 +361,14 @@ function getBankDetails(req, res) {
 function getBankItems(req, res) {
   // Gets you all of the items in a bank
   let options = {
-    path: `assessment/banks/${req.params.bankId}/items?page=all&unrandomized`
+    path: `assessment/banks/${req.params.bankId}/items?raw&unrandomized`
   };
 
   // do this async-ly
   qbank(options)
   .then( function(result) {
     result = JSON.parse(result);
-    return res.send(result.data.results);             // this line sends back the response to the client
+    return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
@@ -364,14 +396,14 @@ function getMissionItems(req, res) {
 function getMissionResults(req, res) {
   // Gets the student results for a specific offered
   let options = {
-    path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?page=all`
+    path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?raw`
   };
 
   // do this async-ly
   qbank(options)
   .then( function(result) {
     result = JSON.parse(result);
-    return res.send(result.data.results);             // this line sends back the response to the client
+    return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
@@ -383,7 +415,7 @@ function getMissions(req, res) {
   // return res.send('ok!');       // go to localhost:8888/middleman/missions to make sure this is running ok
 
   let assessmentOptions = {
-    path: `assessment/banks/${req.params.bankId}/assessments?sections&page=all`
+    path: `assessment/banks/${req.params.bankId}/assessments?sections&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
   },
   assessments = [];
 
@@ -394,11 +426,11 @@ function getMissions(req, res) {
     let offeredsOptions = [];
     result = JSON.parse(result);
 
-    if (result.data.count == 0) {
+    if (result.length == 0) {
       return Q.when([]);
     }
 
-    assessments = result.data.results;
+    assessments = result;
     _.each(assessments, (assessment) => {
       let offeredOption = {
         path: `assessment/banks/${req.params.bankId}/assessments/${assessment.id}/assessmentsoffered`
