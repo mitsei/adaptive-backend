@@ -291,6 +291,7 @@ router.put('/banks/:bankId', editBankDetails);
 router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
 router.post('/banks/:bankId/missions', addSharedMission);
+router.get('/banks/:bankId/studentmissions', getStudentMissions);
 router.post('/banks/:bankId/personalmissions', addPersonalizedMission);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
 router.put('/banks/:bankId/missions/:missionId', editMission);
@@ -417,10 +418,49 @@ function getMissionResults(req, res) {
 
 function getMissions(req, res) {
   // get assessments + offereds
-  // return res.send('ok!');       // go to localhost:8888/middleman/missions to make sure this is running ok
-
   let assessmentOptions = {
-    path: `assessment/banks/${req.params.bankId}/assessments?sections&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
+    path: `assessment/banks/${req.params.bankId}/assessments?raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
+  },
+  assessments = [];
+
+  // do this async-ly
+  qbank(assessmentOptions)
+  .then( function(result) {
+    // now concat with offereds for each assessment
+    let offeredsOptions = [];
+    result = JSON.parse(result);
+
+    if (result.length == 0) {
+      return Q.when([]);
+    }
+
+    assessments = result;
+    _.each(assessments, (assessment) => {
+      let offeredOption = {
+        path: `assessment/banks/${req.params.bankId}/assessments/${assessment.id}/assessmentsoffered?raw`
+      };
+      offeredsOptions.push(qbank(offeredOption));
+    });
+    return Q.all(offeredsOptions);
+  })
+  .then( (responses) => {
+    _.each(responses, (responseString, index) => {
+      let response = JSON.parse(responseString);
+      assessments[index].startTime = response[0].startTime;
+      assessments[index].deadline = response[0].deadline;
+      assessments[index].assessmentOfferedId = response[0].id;
+    })
+    return res.send(assessments);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function getStudentMissions(req, res) {
+  // get assessments + offereds without filtering by type
+  let assessmentOptions = {
+    path: `assessment/banks/${req.params.bankId}/assessments?raw`
   },
   assessments = [];
 
