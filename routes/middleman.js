@@ -302,6 +302,7 @@ router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
 router.post('/banks/:bankId/offereds/:offeredId/takens', createAssessmentTaken);
 router.get('/banks/:bankId/takens/:takenId/questions', getTakenQuestions);
 router.post('/banks/:bankId/takens/:takenId/questions/:questionId/surrender', getWorkedSolution);
+router.post('/banks/:bankId/takens/:takenId/questions/:questionId/submit', submitAnswer);
 router.get('/departments/:departmentName/library', getDepartmentLibraryId);
 router.get('/hierarchies/:nodeId/children', getNodeChildren);
 router.post('/hierarchies/:nodeId/children', setNodeChildren);
@@ -822,6 +823,27 @@ function getWorkedSolution(req, res) {
       path: `assessment/banks/${req.params.bankId}/assessmentstaken/${req.params.takenId}/questions/${req.params.questionId}/surrender`,
       proxy: user.name,
       method: 'POST'
+    };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function submitAnswer(req, res) {
+  // Send student response to the server
+  // Requires authentication header
+  let user = auth(req),
+    options = {
+      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${req.params.takenId}/questions/${req.params.questionId}/submit`,
+      proxy: user.name,
+      method: 'POST',
+      data: req.body
     };
 
   // do this async-ly
