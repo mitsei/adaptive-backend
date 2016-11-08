@@ -4,6 +4,7 @@ var request = require('request');
 var rp = require('request-promise');
 let Q = require('q');
 let _ = require('lodash');
+let auth = require('basic-auth')
 
 let credentials = require('../credentials');
 
@@ -401,10 +402,19 @@ function getMissionItems(req, res) {
 }
 
 function getMissionResults(req, res) {
-  // Gets the student results for a specific offered
-  let options = {
-    path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?raw`
-  };
+  // Gets the student results for a specific offered. If authentication is
+  // passed in, then filters by that agentId. Expects username as '@acc.edu'
+  let user = auth(req),
+    options
+  if (user) {
+    options = {
+      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?agentId=${user.name}&raw`
+    }
+  } else {
+    options = {
+      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?raw`
+    }
+  }
 
   // do this async-ly
   qbank(options)
@@ -462,7 +472,13 @@ function getStudentMissions(req, res) {
   let assessmentOptions = {
     path: `assessment/banks/${req.params.bankId}/assessments?raw`
   },
-  assessments = [];
+  assessments = [],
+  user = auth(req);
+
+
+  if (user) {
+    assessmentOptions.proxy = user.name
+  }
 
   // do this async-ly
   qbank(assessmentOptions)
@@ -480,6 +496,10 @@ function getStudentMissions(req, res) {
       let offeredOption = {
         path: `assessment/banks/${req.params.bankId}/assessments/${assessment.id}/assessmentsoffered?raw`
       };
+      if (user) {
+        offeredOption.proxy = user.name
+      }
+
       offeredsOptions.push(qbank(offeredOption));
     });
     return Q.all(offeredsOptions);
