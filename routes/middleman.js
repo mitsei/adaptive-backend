@@ -292,7 +292,6 @@ router.put('/banks/:bankId', editBankDetails);
 router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
 router.post('/banks/:bankId/missions', addSharedMission);
-router.get('/banks/:bankId/studentmissions', getStudentMissions);
 router.post('/banks/:bankId/personalmissions', addPersonalizedMission);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
 router.put('/banks/:bankId/missions/:missionId', editMission);
@@ -300,6 +299,7 @@ router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
 router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
 // router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
+// router.post('/banks/:bankId/offereds/:offeredId/takens', createAssessmentTaken);
 router.get('/departments/:departmentName/library', getDepartmentLibraryId);
 router.get('/hierarchies/:nodeId/children', getNodeChildren);
 router.post('/hierarchies/:nodeId/children', setNodeChildren);
@@ -428,56 +428,20 @@ function getMissionResults(req, res) {
 
 function getMissions(req, res) {
   // get assessments + offereds
-  let assessmentOptions = {
-    path: `assessment/banks/${req.params.bankId}/assessments?sections&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
-  },
-  assessments = [];
-
-  // do this async-ly
-  qbank(assessmentOptions)
-  .then( function(result) {
-    // now concat with offereds for each assessment
-    let offeredsOptions = [];
-    result = JSON.parse(result);
-
-    if (result.length == 0) {
-      return Q.when([]);
-    }
-
-    assessments = result;
-    _.each(assessments, (assessment) => {
-      let offeredOption = {
-        path: `assessment/banks/${req.params.bankId}/assessments/${assessment.id}/assessmentsoffered?raw`
-      };
-      offeredsOptions.push(qbank(offeredOption));
-    });
-    return Q.all(offeredsOptions);
-  })
-  .then( (responses) => {
-    _.each(responses, (responseString, index) => {
-      let response = JSON.parse(responseString);
-      assessments[index].startTime = response[0].startTime;
-      assessments[index].deadline = response[0].deadline;
-      assessments[index].assessmentOfferedId = response[0].id;
-    })
-    return res.send(assessments);             // this line sends back the response to the client
-  })
-  .catch( function(err) {
-    return res.status(err.statusCode).send(err.message);
-  });
-}
-
-function getStudentMissions(req, res) {
-  // get assessments + offereds without filtering by type
-  let assessmentOptions = {
-    path: `assessment/banks/${req.params.bankId}/assessments?raw`
-  },
-  assessments = [],
-  user = auth(req);
-
-
+  let user = auth(req),
+    assessmentOptions,
+    assessments = []
   if (user) {
-    assessmentOptions.proxy = user.name
+    assessmentOptions = {
+      path: `assessment/banks/${req.params.bankId}/assessments?raw`
+    }
+    // we don't actually need to set the proxy here, because
+    // students can't see assessments in authz -- so still needs
+    // to be FbW user. Just need a different filter.
+  } else {
+    assessmentOptions = {
+      path: `assessment/banks/${req.params.bankId}/assessments?sections&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
+    }
   }
 
   // do this async-ly
@@ -496,10 +460,6 @@ function getStudentMissions(req, res) {
       let offeredOption = {
         path: `assessment/banks/${req.params.bankId}/assessments/${assessment.id}/assessmentsoffered?raw`
       };
-      if (user) {
-        offeredOption.proxy = user.name
-      }
-
       offeredsOptions.push(qbank(offeredOption));
     });
     return Q.all(offeredsOptions);
