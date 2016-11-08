@@ -419,7 +419,7 @@ function getMissionResults(req, res) {
 function getMissions(req, res) {
   // get assessments + offereds
   let assessmentOptions = {
-    path: `assessment/banks/${req.params.bankId}/assessments?raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
+    path: `assessment/banks/${req.params.bankId}/assessments?sections&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
   },
   assessments = [];
 
