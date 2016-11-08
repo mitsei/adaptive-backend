@@ -300,6 +300,7 @@ router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
 // router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
 router.post('/banks/:bankId/offereds/:offeredId/takens', createAssessmentTaken);
+router.get('/banks/:bankId/takens/:takenId/questions', getTakenQuestions);
 router.get('/departments/:departmentName/library', getDepartmentLibraryId);
 router.get('/hierarchies/:nodeId/children', getNodeChildren);
 router.post('/hierarchies/:nodeId/children', setNodeChildren);
@@ -791,6 +792,25 @@ function getDepartmentLibraryId(req, res) {
   } else {
     return res.send('Unknown department');
   }
+}
+
+function getTakenQuestions(req, res) {
+  // Get the questions for a specific taken.
+  // Requires authentication header
+  let user = auth(req),
+    options = {
+      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${req.params.takenId}/questions?raw`,
+      proxy: user.name
+    };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
 }
 
 
