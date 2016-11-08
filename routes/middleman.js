@@ -299,7 +299,7 @@ router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
 router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
 // router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
-// router.post('/banks/:bankId/offereds/:offeredId/takens', createAssessmentTaken);
+router.post('/banks/:bankId/offereds/:offeredId/takens', createAssessmentTaken);
 router.get('/departments/:departmentName/library', getDepartmentLibraryId);
 router.get('/hierarchies/:nodeId/children', getNodeChildren);
 router.post('/hierarchies/:nodeId/children', setNodeChildren);
@@ -632,6 +632,26 @@ function addPersonalizedMission(req, res) {
     return res.status(err.statusCode).send(err.message);
   });
 }
+
+function createAssessmentTaken(req, res) {
+  // create assessment taken for the given user
+  // user required.
+  let user = auth(req),
+    takenOptions = {
+      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
+      method: 'POST',
+      proxy: user.name
+    };
+
+  qbank(takenOptions)
+  .then( function (taken) {
+    return res.send(taken);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
 
 function deleteMission(req, res) {
   // delete assessment + offered
