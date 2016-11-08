@@ -301,6 +301,7 @@ router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
 router.post('/banks/:bankId/offereds/:offeredId/takens', createAssessmentTaken);
 router.get('/banks/:bankId/takens/:takenId/questions', getTakenQuestions);
+router.post('/banks/:bankId/takens/:takenId/questions/:questionId/surrender', getWorkedSolution);
 router.get('/departments/:departmentName/library', getDepartmentLibraryId);
 router.get('/hierarchies/:nodeId/children', getNodeChildren);
 router.post('/hierarchies/:nodeId/children', setNodeChildren);
@@ -813,6 +814,25 @@ function getTakenQuestions(req, res) {
   });
 }
 
+function getWorkedSolution(req, res) {
+  // Give up on a specific question and get the worked solution
+  // Requires authentication header
+  let user = auth(req),
+    options = {
+      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${req.params.takenId}/questions/${req.params.questionId}/surrender`,
+      proxy: user.name,
+      method: 'POST'
+    };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
 
 
 module.exports = router;
