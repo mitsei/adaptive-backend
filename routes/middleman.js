@@ -462,6 +462,7 @@ function getPhase2Results(req, res) {
   .then( function (assessments) {
     let time2 = new Date()
     console.log(time2.getTime())
+    console.log(assessments)
     let offeredOptions = {
       data: {
         raw: true,
@@ -469,7 +470,11 @@ function getPhase2Results(req, res) {
       },
       path: `assessment/banks/${req.params.bankId}/bulkassessmentsoffered`
     }
-    return qbank(offeredOptions)
+    if (offeredOptions.data.assessmentIds.length === 0) {
+      return Q.when('[]')
+    } else {
+      return qbank(offeredOptions)
+    }
   })
   .then( function (offereds) {
     let time3 = new Date()
@@ -481,7 +486,11 @@ function getPhase2Results(req, res) {
       },
       path: `assessment/banks/${req.params.bankId}/bulkofferedresults`
     }
-    return qbank(resultsOptions)
+    if (resultsOptions.data.assessmentOfferedIds.length === 0) {
+      return Q.when('[]')
+    } else {
+      return qbank(resultsOptions)
+    }
   })
   .then( function (results) {
     let time4 = new Date()
