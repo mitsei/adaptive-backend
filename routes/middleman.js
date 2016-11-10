@@ -441,11 +441,13 @@ function getPhase2Results(req, res) {
   // Returns an aggregated list, as getMissionResults does
   let options = {
     path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken?raw`
-  }, phase2MissionResults
+  }
   // do this async-ly
   qbank(options)
   .then( function(takens) {
     // for each taken, query by it
+    let time1 = new Date()
+    console.log(time1.getTime())
     takens = JSON.parse(takens)
     let takenIds = _.map(takens, 'id'),
     phase2Options = {
@@ -458,32 +460,33 @@ function getPhase2Results(req, res) {
     return qbank(phase2Options)
   })
   .then( function (assessments) {
-    let offeredPromises = []
-    assessments = JSON.parse(assessments)
-    _.each(assessments, (mission) => {
-      let offeredOptions = {
-        path: `assessment/banks/${req.params.bankId}/assessments/${mission.id}/assessmentsoffered?raw`
-      }
-      offeredPromises.push(qbank(offeredOptions))
-    })
-    return Q.all(offeredPromises)
+    let time2 = new Date()
+    console.log(time2.getTime())
+    let offeredOptions = {
+      data: {
+        raw: true,
+        assessmentIds: _.map(JSON.parse(assessments), 'id')
+      },
+      path: `assessment/banks/${req.params.bankId}/bulkassessmentsoffered`
+    }
+    return qbank(offeredOptions)
   })
   .then( function (offereds) {
-    let resultsPromises = []
-    _.each(offereds, (offered, index) => {
-      offered = JSON.parse(offered)[0]
-      let resultsOptions = {
-        path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${offered.id}/results?raw`
-      }
-    })
-    return Q.all(resultsPromises)
+    let time3 = new Date()
+    console.log(time3.getTime())
+    let resultsOptions = {
+      data: {
+        raw: true,
+        assessmentOfferedIds: _.map(JSON.parse(offereds), 'id')
+      },
+      path: `assessment/banks/${req.params.bankId}/bulkofferedresults`
+    }
+    return qbank(resultsOptions)
   })
   .then( function (results) {
-    let finalResults = []
-    _.each(results, (result) => {
-      finalResults.push(JSON.parse(result)[0])
-    })
-    return res.send(finalResults);             // this line sends back the response to the client
+    let time4 = new Date()
+    console.log(time4.getTime())
+    return res.send(results);             // this line sends back the response to the client
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
