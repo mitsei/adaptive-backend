@@ -299,6 +299,7 @@ router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
 router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
 // router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
+router.get('/banks/:bankId/offereds/:offeredId/p2results', getPhase2Results);
 router.post('/banks/:bankId/offereds/:offeredId/takens', createAssessmentTaken);
 router.get('/banks/:bankId/takens/:takenId/questions', getTakenQuestions);
 router.post('/banks/:bankId/takens/:takenId/questions/:questionId/surrender', getWorkedSolution);
@@ -407,6 +408,8 @@ function getMissionItems(req, res) {
 function getMissionResults(req, res) {
   // Gets the student results for a specific offered. If authentication is
   // passed in, then filters by that agentId. Expects username as '@acc.edu'
+  // Filtering by specific user is used for showing historical mission results on the
+  // student app.
   let user = auth(req),
     options
   if (user) {
@@ -428,6 +431,65 @@ function getMissionResults(req, res) {
     return res.status(err.statusCode).send(err.message);
   });
 }
+
+function getPhase2Results(req, res) {
+  // Gets the phase 2 student results for a specific offered.
+  // It first gets all the takens, and then
+  // Queries assessments by sourceAssessmentTakenId
+  // And for each of those assessments, gets their one
+  //   offered and then results for that offered
+  // Returns an aggregated list, as getMissionResults does
+  let options = {
+    path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken?raw`
+  }, phase2MissionResults
+  // do this async-ly
+  qbank(options)
+  .then( function(takens) {
+    // for each taken, query by it
+    takens = JSON.parse(takens)
+    let takenIds = _.map(takens, 'id'),
+    phase2Options = {
+      data: {
+        sourceAssessmentTakenId: takenIds,
+        raw: true
+      },
+      path: `assessment/banks/${req.params.bankId}/assessments`
+    }
+    return qbank(phase2Options)
+  })
+  .then( function (assessments) {
+    let offeredPromises = []
+    assessments = JSON.parse(assessments)
+    _.each(assessments, (mission) => {
+      let offeredOptions = {
+        path: `assessment/banks/${req.params.bankId}/assessments/${mission.id}/assessmentsoffered?raw`
+      }
+      offeredPromises.push(qbank(offeredOptions))
+    })
+    return Q.all(offeredPromises)
+  })
+  .then( function (offereds) {
+    let resultsPromises = []
+    _.each(offereds, (offered, index) => {
+      offered = JSON.parse(offered)[0]
+      let resultsOptions = {
+        path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${offered.id}/results?raw`
+      }
+    })
+    return Q.all(resultsPromises)
+  })
+  .then( function (results) {
+    let finalResults = []
+    _.each(results, (result) => {
+      finalResults.push(JSON.parse(result)[0])
+    })
+    return res.send(finalResults);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
 
 function getMissions(req, res) {
   // get assessments + offereds
