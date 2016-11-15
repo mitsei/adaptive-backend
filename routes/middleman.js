@@ -301,8 +301,9 @@ router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
 // router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
 router.get('/banks/:bankId/offereds/:offeredId/p2results', getPhase2Results);
-router.post('/banks/:bankId/offereds/:offeredId/takens', createAssessmentTaken);
-router.get('/banks/:bankId/takens/:takenId/questions', getTakenQuestions);
+// router.post('/banks/:bankId/offereds/:offeredId/takens', createAssessmentTaken);
+router.get('/banks/:bankId/offereds/:offeredId/takeMission', getUserMission);
+// router.get('/banks/:bankId/takens/:takenId/questions', getTakenQuestions);
 router.post('/banks/:bankId/takens/:takenId/questions/:questionId/surrender', getWorkedSolution);
 router.post('/banks/:bankId/takens/:takenId/questions/:questionId/submit', submitAnswer);
 router.get('/departments/:departmentName/library', getDepartmentLibraryId);
@@ -563,7 +564,7 @@ function canTakeMissions(req, res) {
       path: `assessment/banks/${req.params.bankId}/assessments/cantake`,
       proxy: user.name
     }
-
+  console.log(options)
   // do this async-ly
   qbank(options)
   .then( function(result) {
@@ -729,26 +730,6 @@ function addPersonalizedMission(req, res) {
   });
 }
 
-function createAssessmentTaken(req, res) {
-  // create assessment taken for the given user
-  // user required.
-  let user = auth(req),
-    takenOptions = {
-      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
-      method: 'POST',
-      proxy: user.name
-    };
-
-  qbank(takenOptions)
-  .then( function (taken) {
-    return res.send(taken);             // this line sends back the response to the client
-  })
-  .catch( function(err) {
-    return res.status(err.statusCode).send(err.message);
-  });
-}
-
-
 function deleteMission(req, res) {
   // delete assessment + offered
   let offeredOptions = {
@@ -889,17 +870,25 @@ function getDepartmentLibraryId(req, res) {
   }
 }
 
-function getTakenQuestions(req, res) {
-  // Get the questions for a specific taken.
-  // Requires authentication header
+function getUserMission(req, res) {
+  // create assessment taken for the given user and get questions
+  // user required.
   let user = auth(req),
-    options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${req.params.takenId}/questions?raw`,
+    takenOptions = {
+      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
+      method: 'POST',
       proxy: user.name
     };
 
-  // do this async-ly
-  qbank(options)
+  qbank(takenOptions)
+  .then( function (taken) {
+    let options = {
+      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${taken.id}/questions?raw`,
+      proxy: user.name
+    };
+
+    return qbank(options)
+  })
   .then( function(result) {
     return res.send(result);             // this line sends back the response to the client
   })
