@@ -291,6 +291,7 @@ router.get('/banks/:bankId', getBankDetails);
 router.put('/banks/:bankId', editBankDetails);
 router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
+router.get('/banks/:bankId/cantakemissions', canTakeMissions);
 router.post('/banks/:bankId/missions', addSharedMission);
 router.post('/banks/:bankId/personalmissions', addPersonalizedMission);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
@@ -549,6 +550,24 @@ function getMissions(req, res) {
       assessments[index].assessmentOfferedId = response[0].id;
     })
     return res.send(assessments);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function canTakeMissions(req, res) {
+  // do authz check on missions
+  let user = auth(req),
+    options = {
+      path: `assessment/banks/${req.params.bankId}/assessments/cantake`,
+      proxy: user.name
+    }
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    return res.send(result)
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
