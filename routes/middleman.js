@@ -294,6 +294,7 @@ router.get('/banks/:bankId/missions', getMissions);
 router.get('/banks/:bankId/cantakemissions', canTakeMissions);
 router.post('/banks/:bankId/missions', addSharedMission);
 router.post('/banks/:bankId/personalmissions', addPersonalizedMission);
+router.get('/banks/:bankId/privatebankid', getPrivateBankIdForUser);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
 router.put('/banks/:bankId/missions/:missionId', editMission);
 router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
@@ -301,9 +302,7 @@ router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
 // router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
 router.get('/banks/:bankId/offereds/:offeredId/p2results', getPhase2Results);
-// router.post('/banks/:bankId/offereds/:offeredId/takens', createAssessmentTaken);
 router.get('/banks/:bankId/offereds/:offeredId/takeMission', getUserMission);
-// router.get('/banks/:bankId/takens/:takenId/questions', getTakenQuestions);
 router.post('/banks/:bankId/takens/:takenId/questions/:questionId/surrender', getWorkedSolution);
 router.post('/banks/:bankId/takens/:takenId/questions/:questionId/submit', submitAnswer);
 router.get('/departments/:departmentName/library', getDepartmentLibraryId);
@@ -665,6 +664,24 @@ function addSharedMission(req, res) {
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
   });
+}
+
+function getPrivateBankIdForUser(req, res) {
+  // return the user's private bank, within the given bank
+  // create it if necessary
+  let user = auth(req)
+  let usersPrivateBankId
+  Q.when(getPrivateBankId(req.params.bankId, user.name))
+  .then((privateBankId) => {
+    usersPrivateBankId = privateBankId
+    Q.when(linkPrivateBanksIntoTerm([privateBankId], req.params.bankId))
+  })
+  .then(() => {
+    return res.send(usersPrivateBankId);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  })
 }
 
 function addPersonalizedMission(req, res) {
