@@ -315,6 +315,9 @@ router.get('/banks/:bankId/offereds/:offeredId/takeMission', getUserMission);
 router.post('/banks/:bankId/takens/:takenId/questions/:questionId/surrender', getWorkedSolution);
 router.post('/banks/:bankId/takens/:takenId/questions/:questionId/submit', submitAnswer);
 router.get('/departments/:departmentName/library', getDepartmentLibraryId);
+router.get('/departments/:departmentName/modules', getDepartmentModules);
+router.get('/departments/:departmentName/outcomes', getDepartmentOutcomes);
+router.get('/departments/:departmentName/relationships', getDepartmentRelationships);
 router.get('/hierarchies/:nodeId/children', getNodeChildren);
 router.post('/hierarchies/:nodeId/children', setNodeChildren);
 router.get('/objectivebanks/:contentLibraryId/modules', getModules);
@@ -913,6 +916,68 @@ function getDepartmentLibraryId(req, res) {
   }
 }
 
+function getDepartmentModules(req, res) {
+  if (_.keys(domainMapping).indexOf(req.params.departmentName.toLowerCase()) >= 0) {
+    let contentLibraryId = domainMapping[req.params.departmentName.toLowerCase()][0]
+    let bankId = getHandcarBankId(contentLibraryId),
+      options = {
+        path: `/learning/objectivebanks/${bankId}/objectives?genustypeid=mc3-objective%3Amc3.learning.topic%40MIT-OEIT`
+      };
+
+    // do this async-ly
+    handcar(options)
+    .then( function(result) {
+      return res.send(result);             // this line sends back the response to the client
+    })
+    .catch( function(err) {
+      return res.status(err.statusCode).send(err.message);
+    });
+  } else {
+    return res.send('Unknown department');
+  }
+}
+
+function getDepartmentOutcomes(req, res) {
+  if (_.keys(domainMapping).indexOf(req.params.departmentName.toLowerCase()) >= 0) {
+    let contentLibraryId = domainMapping[req.params.departmentName.toLowerCase()][0]
+    let bankId = getHandcarBankId(contentLibraryId),
+      options = {
+        path: `/learning/objectivebanks/${bankId}/objectives?genustypeid=mc3-objective%3Amc3.learning.outcome%40MIT-OEIT`
+      };
+    // do this async-ly
+    handcar(options)
+    .then( function(result) {
+      return res.send(result);             // this line sends back the response to the client
+    })
+    .catch( function(err) {
+      return res.status(err.statusCode).send(err.message);
+    });
+  } else {
+    return res.send('Unknown department');
+  }
+}
+
+function getDepartmentRelationships(req, res) {
+  if (_.keys(domainMapping).indexOf(req.params.departmentName.toLowerCase()) >= 0) {
+    let contentLibraryId = domainMapping[req.params.departmentName.toLowerCase()][0]
+    let familyId = getHandcarFamilyId(contentLibraryId),
+      options = {
+        path: `/relationship/families/${familyId}/relationships?genustypeid=mc3-relationship%3Amc3.lo.2.lo.requisite%40MIT-OEIT&genustypeid=mc3-relationship%3Amc3.lo.2.lo.parent.child%40MIT-OEIT`
+      };
+
+    // do this async-ly
+    handcar(options)
+    .then( function(result) {
+      return res.send(result);             // this line sends back the response to the client
+    })
+    .catch( function(err) {
+      return res.status(err.statusCode).send(err.message);
+    });
+  } else {
+    return res.send('Unknown department');
+  }
+}
+
 function getUserMission(req, res) {
   // create assessment taken for the given user and get questions
   // user required.
@@ -933,7 +998,6 @@ function getUserMission(req, res) {
     return qbank(options)
   })
   .then( function(result) {
-    console.log('got questions', results)
     return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
