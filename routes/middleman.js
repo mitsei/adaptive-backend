@@ -210,11 +210,20 @@ function linkSharedBankToTerm(sharedBankId, termBankId) {
 
 // utility method to get the sharedBankId for CRUD on shared missions...
 function getSharedBankId(bankId) {
-  let getSharedBankOptions = {
-    path: `assessment/banks/${sharedBankAlias(bankId)}`
-  }, sharedBank = {};
+  // first, get the actual bank -- what if bankId is an alias?
+  let getOriginalBankOptions = {
+    path: `assessment/banks/${bankId}`
+  }, sharedBank = {}
 
-  return qbank(getSharedBankOptions)
+  return qbank(getOriginalBankOptions)
+  .then((result) => {
+    originalBank = JSON.parse(result)
+    let getSharedBankOptions = {
+      path: `assessment/banks/${sharedBankAlias(originalBank.id)}`
+    }
+
+    return qbank(getSharedBankOptions)
+  })
   .then((result) => {
     sharedBank = JSON.parse(result)
     // let's now make sure the sharedBank is part of the
@@ -291,7 +300,7 @@ router.get('/banks/:bankId', getBankDetails);
 router.put('/banks/:bankId', editBankDetails);
 router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
-router.get('/banks/:bankId/cantakemissions', canTakeMissions);
+router.get('/banks/:bankId/hasbasicauthz', hasBasicAuthz);
 router.post('/banks/:bankId/missions', addSharedMission);
 router.post('/banks/:bankId/personalmissions', addPersonalizedMission);
 router.get('/banks/:bankId/privatebankid', getPrivateBankIdForUser);
@@ -462,8 +471,6 @@ function getPhase2Results(req, res) {
   })
   .then( function (assessments) {
     let time2 = new Date()
-    console.log(time2.getTime())
-    console.log(assessments)
     let offeredOptions = {
       data: {
         raw: true,
@@ -556,20 +563,33 @@ function getMissions(req, res) {
   });
 }
 
-function canTakeMissions(req, res) {
-  // do authz check on missions
-  let user = auth(req),
-    options = {
-      path: `assessment/banks/${req.params.bankId}/assessments/cantake`,
+function hasBasicAuthz(req, res) {
+  // do authz check on basic QBank access
+  // Changed from canTakeMissions authz check because
+  //   of the way we're handling Phase II missions now,
+  //   students don't have blanket access to take for
+  //   an entire school.
+  let user = auth(req)
+  let options = {
+      path: `assessment/banks/${req.params.bankId}`
+    }
+
+  // need to get the original bankId, because for some reason
+  // server-side, the authz doesn't work properly for aliased ids?
+  qbank(options)
+  .then( function (originalBank) {
+    bank = JSON.parse(originalBank)
+    let bankOptions = {
+      path: `assessment/banks/${bank.id}`,
       proxy: user.name
     }
-  console.log(options)
-  // do this async-ly
-  qbank(options)
+    return qbank(options)
+  })
   .then( function(result) {
     return res.send(result)
   })
   .catch( function(err) {
+    console.log(err)
     return res.status(err.statusCode).send(err.message);
   });
 }
@@ -674,7 +694,13 @@ function getPrivateBankIdForUser(req, res) {
   Q.when(getPrivateBankId(req.params.bankId, user.name))
   .then((privateBankId) => {
     usersPrivateBankId = privateBankId
-    Q.when(linkPrivateBanksIntoTerm([privateBankId], req.params.bankId))
+    return Q.when(linkPrivateBanksIntoTerm([privateBankId], req.params.bankId))
+  })
+  .then(() => {
+    return Q.when(getSharedBankId(req.params.bankId))
+  })
+  .then((sharedBankId) => {
+    return Q.when(addStudentAuthz(sharedBankId, user.name))
   })
   .then(() => {
     return res.send(usersPrivateBankId);             // this line sends back the response to the client
@@ -899,14 +925,15 @@ function getUserMission(req, res) {
 
   qbank(takenOptions)
   .then( function (taken) {
+    taken = JSON.parse(taken)
     let options = {
       path: `assessment/banks/${req.params.bankId}/assessmentstaken/${taken.id}/questions?raw`,
       proxy: user.name
     };
-
     return qbank(options)
   })
   .then( function(result) {
+    console.log('got questions', results)
     return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
