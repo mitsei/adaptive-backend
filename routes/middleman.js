@@ -72,6 +72,14 @@ function getHandcarFamilyId(contentLibraryId) {
   // @cole: help needed
 // ==========
 
+function getUsername(request) {
+  if (_.keys(request.headers).indexOf('x-fbw-username') >= 0) {
+    return request.headers['x-fbw-username']
+  } else {
+    return null
+  }
+}
+
 function addStudentAuthz(bankId, username) {
   // now configure authz so students can "take" in the private bank
   let now = new Date(),
@@ -423,11 +431,11 @@ function getMissionResults(req, res) {
   // passed in, then filters by that agentId. Expects username as '@acc.edu'
   // Filtering by specific user is used for showing historical mission results on the
   // student app.
-  let user = auth(req),
+  let username = getUsername(req),
     options
   if (user) {
     options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?agentId=${user.name}&raw`
+      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?agentId=${username}&raw`
     }
   } else {
     options = {
@@ -516,10 +524,10 @@ function getPhase2Results(req, res) {
 
 function getMissions(req, res) {
   // get assessments + offereds
-  let user = auth(req),
+  let username = getUsername(req),
     assessmentOptions,
     assessments = []
-  if (user) {
+  if (username) {
     assessmentOptions = {
       path: `assessment/banks/${req.params.bankId}/assessments?raw`
     }
@@ -572,7 +580,7 @@ function hasBasicAuthz(req, res) {
   //   of the way we're handling Phase II missions now,
   //   students don't have blanket access to take for
   //   an entire school.
-  let user = auth(req)
+  let username = getUsername(req)
   let options = {
       path: `assessment/banks/${req.params.bankId}`
     }
@@ -584,7 +592,7 @@ function hasBasicAuthz(req, res) {
     bank = JSON.parse(originalBank)
     let bankOptions = {
       path: `assessment/banks/${bank.id}`,
-      proxy: user.name
+      proxy: username
     }
     return qbank(options)
   })
@@ -592,7 +600,6 @@ function hasBasicAuthz(req, res) {
     return res.send(result)
   })
   .catch( function(err) {
-    console.log(err)
     return res.status(err.statusCode).send(err.message);
   });
 }
@@ -692,9 +699,9 @@ function addSharedMission(req, res) {
 function getPrivateBankIdForUser(req, res) {
   // return the user's private bank, within the given bank
   // create it if necessary
-  let user = auth(req)
+  let username = getUsername(req)
   let usersPrivateBankId
-  Q.when(getPrivateBankId(req.params.bankId, user.name))
+  Q.when(getPrivateBankId(req.params.bankId, username))
   .then((privateBankId) => {
     usersPrivateBankId = privateBankId
     return Q.when(linkPrivateBanksIntoTerm([privateBankId], req.params.bankId))
@@ -703,12 +710,13 @@ function getPrivateBankIdForUser(req, res) {
     return Q.when(getSharedBankId(req.params.bankId))
   })
   .then((sharedBankId) => {
-    return Q.when(addStudentAuthz(sharedBankId, user.name))
+    return Q.when(addStudentAuthz(sharedBankId, username))
   })
   .then(() => {
     return res.send(usersPrivateBankId);             // this line sends back the response to the client
   })
   .catch( function(err) {
+    console.log(err)
     return res.status(err.statusCode).send(err.message);
   })
 }
@@ -981,11 +989,11 @@ function getDepartmentRelationships(req, res) {
 function getUserMission(req, res) {
   // create assessment taken for the given user and get questions
   // user required.
-  let user = auth(req),
+  let username = getUsername(req),
     takenOptions = {
       path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
       method: 'POST',
-      proxy: user.name
+      proxy: username
     };
 
   qbank(takenOptions)
@@ -993,7 +1001,7 @@ function getUserMission(req, res) {
     taken = JSON.parse(taken)
     let options = {
       path: `assessment/banks/${req.params.bankId}/assessmentstaken/${taken.id}/questions?raw`,
-      proxy: user.name
+      proxy: username
     };
     return qbank(options)
   })
@@ -1008,10 +1016,10 @@ function getUserMission(req, res) {
 function getWorkedSolution(req, res) {
   // Give up on a specific question and get the worked solution
   // Requires authentication header
-  let user = auth(req),
+  let username = getUsername(req),
     options = {
       path: `assessment/banks/${req.params.bankId}/assessmentstaken/${req.params.takenId}/questions/${req.params.questionId}/surrender`,
-      proxy: user.name,
+      proxy: username,
       method: 'POST'
     };
 
@@ -1028,10 +1036,10 @@ function getWorkedSolution(req, res) {
 function submitAnswer(req, res) {
   // Send student response to the server
   // Requires authentication header
-  let user = auth(req),
+  let username = getUsername(req),
     options = {
       path: `assessment/banks/${req.params.bankId}/assessmentstaken/${req.params.takenId}/questions/${req.params.questionId}/submit`,
-      proxy: user.name,
+      proxy: username,
       method: 'POST',
       data: req.body
     };
