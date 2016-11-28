@@ -433,7 +433,7 @@ function getMissionResults(req, res) {
   // student app.
   let username = getUsername(req),
     options
-  if (user) {
+  if (username) {
     options = {
       path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?agentId=${username}&raw`
     }
