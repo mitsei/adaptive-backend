@@ -305,7 +305,7 @@ function getPrivateBankId(bankId, username) {
 
 // utility function to create a bank, add it as a node
 // in a hierarchy
-function getOrCreateChildNode (parentId, nodeName, nodeGenus) {
+function getOrCreateChildNode (parentId, nodeName, nodeGenus, nodeDescription) {
   // don't need to proxy users when creating banks
   // Just check the bank children directly, because you might have
   //   multiple banks of "Spring 2017" for example...
@@ -327,7 +327,7 @@ function getOrCreateChildNode (parentId, nodeName, nodeGenus) {
         data: {
           genusTypeId: nodeGenus,
           name: nodeName,
-          description: "FbW node"
+          description: nodeDescription || "FbW node"
         }
       };
       return Q(qbank(createParams));
@@ -401,7 +401,7 @@ function setBankAlias (data) {
         return getOrCreateChildNode(departmentData.id, data.subjectName, SUBJECT_GENUS);
       })
       .then((subjectData) => {
-        return getOrCreateChildNode(subjectData.id, data.termName, TERM_GENUS);
+        return getOrCreateChildNode(subjectData.id, data.subjectName, TERM_GENUS, data.termName);
       })
       .then((termData) => {
         newTerm = termData;
