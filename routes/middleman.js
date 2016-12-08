@@ -22,6 +22,9 @@ let SHARED_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-shared-missions%40ODL.M
 let PRIVATE_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-private-missions%40ODL.MIT.EDU"
 let HOMEWORK_MISSION_GENUS = "assessment-genus%3Afbw-homework-mission%40ODL.MIT.EDU"
 let TEST_FLIGHT_MISSION_GENUS = "assessment-genus%3Afbw-in-class-mission%40ODL.MIT.EDU"
+let DEPARTMENT_GENUS = "assessment-bank-genus%3Afbw-department%40ODL.MIT.EDU"
+let SUBJECT_GENUS = "assessment-bank-genus%3Afbw-subject%40ODL.MIT.EDU"
+let TERM_GENUS = "assessment-bank-genus%3Afbw-term%40ODL.MIT.EDU"
 
 let STUDENT_TAKING_AUTHZ_FUNCTIONS = ['assessment.AssessmentTaken%3Acreate%40ODL.MIT.EDU',
                                       'assessment.AssessmentTaken%3Alookup%40ODL.MIT.EDU',
@@ -161,11 +164,13 @@ function privateBankAlias(termBankId, username) {
 }
 
 function sharedBankAlias(termBankId) {
-  // should return something like "shared-bank%3A1234567890abcdef12345678%40ODL.MIT.EDU"
+  // should return something like "shared-bank%3Aassessment.Bank%253A1234567890abcdef12345678%2540ODL.MIT.EDU%40ODL.MIT.EDU"
   if (termBankId.indexOf('@') >= 0) {
+    termBankId = encodeURIComponent(encodeURIComponent(termBankId))
+  } else {
     termBankId = encodeURIComponent(termBankId)
   }
-  return `shared-bank%3A${termBankId.match(/%3A(.*)%40/)[1]}%40ODL.MIT.EDU`
+  return `shared-bank%3A${termBankId}%40ODL.MIT.EDU`
 }
 
 // utility method to get the sharedBankId for CRUD on shared missions...
@@ -183,9 +188,8 @@ function createSharedBank(bankId) {
   };
 
   return qbank(createSharedBankOptions)
-  .then((res) => {return res.json()})
   .then( function (newBank) {
-    return Q.when(newBank)
+    return Q.when(JSON.parse(newBank))
   })
 }
 
@@ -222,14 +226,12 @@ function getSharedBankId(bankId) {
   let getOriginalBankOptions = {
     path: `assessment/banks/${bankId}`
   }, sharedBank = {}
-
   return qbank(getOriginalBankOptions)
   .then((result) => {
     originalBank = JSON.parse(result)
     let getSharedBankOptions = {
       path: `assessment/banks/${sharedBankAlias(originalBank.id)}`
     }
-
     return qbank(getSharedBankOptions)
   })
   .then((result) => {
@@ -301,9 +303,135 @@ function getPrivateBankId(bankId, username) {
   })
 }
 
+// utility function to create a bank, add it as a node
+// in a hierarchy
+function getOrCreateChildNode (parentId, nodeName, nodeGenus) {
+  // don't need to proxy users when creating banks
+  // Just check the bank children directly, because you might have
+  //   multiple banks of "Spring 2017" for example...
+  let getBankParams = {
+    path: `assessment/hierarchies/nodes/${parentId}/children`
+  }
+  let newBank = {}
+  return Q(qbank(getBankParams))
+  .then((children) => {
+    children = JSON.parse(children)
+    let match = _.find(children.data.results, (child) => {
+      return child.genusTypeId === nodeGenus && child.displayName.text === nodeName
+    })
+    if (!match) {
+      // create the bank and add it as a child node
+      var createParams = {
+        method: 'POST',
+        path: 'assessment/banks',
+        data: {
+          genusTypeId: nodeGenus,
+          name: nodeName,
+          description: "FbW node"
+        }
+      };
+      return Q(qbank(createParams));
+    } else {
+      // proceed with the match -- should be one
+      newBank = match
+      return Q.reject(match);
+    }
+  })
+  .then((newBankData) => {
+    // add as a hierarchy child
+    var hierarchyParams = {
+      path: `assessment/hierarchies/nodes/${parentId}/children`
+    };
+    newBank = JSON.parse(newBankData);
+    return Q(qbank(hierarchyParams));
+  })
+  .then((currentChildrenData) => {
+    var currentChildrenIds = _.map(JSON.parse(currentChildrenData).data.results, 'id'),
+      addChildParams = {
+        method: 'POST',
+        path: `assessment/hierarchies/nodes/${parentId}/children`,
+        data: {
+        }
+      };
+    currentChildrenIds.push(newBank.id);
+    addChildParams.data.ids = currentChildrenIds;
+    return Q(qbank(addChildParams));
+  })
+  .then(() => {
+    return Q.when(newBank);
+  }, (err) => {
+    // from http://stackoverflow.com/questions/29499582/how-to-properly-break-out-of-a-promise-chain#29505206
+    if (err == newBank) {
+      return Q.when(newBank);
+    }
+  })
+  .catch((error) => {
+    console.log('error creating a child node');
+  });
+}
+
+function aliasTerm (bankId, aliasId) {
+  var aliasParams = {
+    method: 'PUT',
+    path: `assessment/banks/${bankId}`,
+    data: {
+      aliasId: aliasId
+    }
+  };
+  return qbank(aliasParams)
+    .then((data) => {
+      return Q.when(JSON.parse(data));
+    })
+    .catch((error) => {
+      console.log('error aliasing a term');
+    });
+}
+
+function setBankAlias (data) {
+  // try to GET the alias first, to see if it already exists
+  var params = {
+      path: `assessment/banks/${data.aliasId}`
+    },
+    _this = this,
+    newTermId = '';
+
+  return qbank(params)
+    .then((bankData) => {
+      // the bank already exists, so return it
+      return Q.when(JSON.parse(bankData).id);
+    })
+    .catch((error) => {
+      // bank does not exist, create it -- first see if the
+      // name exists, then we're just missing term.
+      // Otherwise, create both bank and term.
+      return getOrCreateChildNode(data.bankId, data.departmentName, DEPARTMENT_GENUS)
+      .then((departmentData) => {
+        return getOrCreateChildNode(departmentData.id, data.subjectName, SUBJECT_GENUS);
+      })
+      .then((subjectData) => {
+        return getOrCreateChildNode(subjectData.id, data.termName, TERM_GENUS);
+      })
+      .then((termData) => {
+        newTermId = termData.id;
+        return aliasTerm(termData.id, data.aliasId);
+      })
+      .then(() => {
+        return getSharedBankId(newTermId)
+      })
+      .then(() => {
+        return Q.when(newTermId);
+      })
+    })
+    .catch((error) => {
+      console.log('error creating the nodes and aliases');
+      console.log(error);
+    })
+}
+
 // so the full path for this endpoint is /middleman/...
 router.post('/authorizations', setAuthorizations);
 router.get('/banks', getBanks);
+router.post('/banks', createBank);
 router.get('/banks/:bankId', getBankDetails);
 router.put('/banks/:bankId', editBankDetails);
 router.get('/banks/:bankId/items', getBankItems);
@@ -316,7 +444,6 @@ router.delete('/banks/:bankId/missions/:missionId', deleteMission);
 router.put('/banks/:bankId/missions/:missionId', editMission);
 router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
 router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
-// router.put('/banks/:bankId/offereds/:offeredId', editOffered);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
 router.get('/banks/:bankId/offereds/:offeredId/p2results', getPhase2Results);
 router.get('/banks/:bankId/offereds/:offeredId/takeMission', getUserMission);
@@ -349,6 +476,33 @@ function getBanks(req, res) {
     .catch( function(err) {
       return res.status(err.statusCode).send(err.message);
     });
+}
+
+function createBank(req, res) {
+  // create a D2L aliased bank in the right hierarchy...
+  // Expects input to consist of:
+  //   - a School bankId, like ACC or QCC root nodeId
+  //   - a Department name, like algebra or accounting
+  //   - a Subject name, like Accounting 101
+  //   - a Term, like Spring 2017
+  //   - a D2L aliasId, like assessment.Bank%3A123456%40ACC.D2L.com
+  // In turn, this will create the bank hierarchy within
+  //   the school and set the D2L alias.
+  //
+  //   School
+  //     |- Department
+  //        |- Subject
+  //           |- Term
+  //              |- Shared bank
+  // This returns the Term's bankId to the instructor app
+
+  setBankAlias(req.body)
+  .then((termId) => {
+    return res.send({termId})
+  })
+  .catch((err) => {
+    return res.status(err.statusCode).send(err.message)
+  })
 }
 
 function editBankDetails(req, res) {
