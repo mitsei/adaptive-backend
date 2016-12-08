@@ -339,23 +339,15 @@ function getOrCreateChildNode (parentId, nodeName, nodeGenus) {
   })
   .then((newBankData) => {
     // add as a hierarchy child
-    var hierarchyParams = {
-      path: `assessment/hierarchies/nodes/${parentId}/children`
-    };
     newBank = JSON.parse(newBankData);
+    var hierarchyParams = {
+      path: `assessment/hierarchies/nodes/${parentId}/children`,
+      method: 'POST',
+      data: {
+        ids: [newBank.id]
+      }
+    };
     return Q(qbank(hierarchyParams));
-  })
-  .then((currentChildrenData) => {
-    var currentChildrenIds = _.map(JSON.parse(currentChildrenData).data.results, 'id'),
-      addChildParams = {
-        method: 'POST',
-        path: `assessment/hierarchies/nodes/${parentId}/children`,
-        data: {
-        }
-      };
-    currentChildrenIds.push(newBank.id);
-    addChildParams.data.ids = currentChildrenIds;
-    return Q(qbank(addChildParams));
   })
   .then(() => {
     return Q.when(newBank);
@@ -393,12 +385,12 @@ function setBankAlias (data) {
       path: `assessment/banks/${data.aliasId}`
     },
     _this = this,
-    newTermId = '';
+    newTerm = '';
 
   return qbank(params)
     .then((bankData) => {
       // the bank already exists, so return it
-      return Q.when(JSON.parse(bankData).id);
+      return Q.when(JSON.parse(bankData));
     })
     .catch((error) => {
       // bank does not exist, create it -- first see if the
@@ -412,14 +404,14 @@ function setBankAlias (data) {
         return getOrCreateChildNode(subjectData.id, data.termName, TERM_GENUS);
       })
       .then((termData) => {
-        newTermId = termData.id;
+        newTerm = termData;
         return aliasTerm(termData.id, data.aliasId);
       })
       .then(() => {
-        return getSharedBankId(newTermId)
+        return getSharedBankId(newTerm.id)
       })
       .then(() => {
-        return Q.when(newTermId);
+        return Q.when(newTerm);
       })
     })
     .catch((error) => {
@@ -481,11 +473,11 @@ function getBanks(req, res) {
 function createBank(req, res) {
   // create a D2L aliased bank in the right hierarchy...
   // Expects input to consist of:
-  //   - a School bankId, like ACC or QCC root nodeId
-  //   - a Department name, like algebra or accounting
-  //   - a Subject name, like Accounting 101
-  //   - a Term, like Spring 2017
-  //   - a D2L aliasId, like assessment.Bank%3A123456%40ACC.D2L.com
+  //   - a bankId, like ACC or QCC root nodeId
+  //   - a departmentName, like algebra or accounting
+  //   - a subjectName, like Accounting 101
+  //   - a termName, like Spring 2017
+  //   - an aliasId, like assessment.Bank%3A123456%40ACC.D2L.com
   // In turn, this will create the bank hierarchy within
   //   the school and set the D2L alias.
   //
@@ -497,8 +489,8 @@ function createBank(req, res) {
   // This returns the Term's bankId to the instructor app
 
   setBankAlias(req.body)
-  .then((termId) => {
-    return res.send({termId})
+  .then((term) => {
+    return res.send(term)
   })
   .catch((err) => {
     return res.status(err.statusCode).send(err.message)
