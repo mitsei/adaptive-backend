@@ -692,7 +692,6 @@ function getMissions(req, res) {
     // now concat with offereds for each assessment
     let offeredsOptions = [];
     result = JSON.parse(result);
-
     if (result.length == 0) {
       return Q.when([]);
     }
@@ -709,13 +708,17 @@ function getMissions(req, res) {
   .then( (responses) => {
     _.each(responses, (responseString, index) => {
       let response = JSON.parse(responseString);
-      assessments[index].startTime = response[0].startTime;
-      assessments[index].deadline = response[0].deadline;
-      assessments[index].assessmentOfferedId = response[0].id;
+      if (response.length > 0) {
+        // This means an offered was not created ... which is BAD
+        assessments[index].startTime = response[0].startTime;
+        assessments[index].deadline = response[0].deadline;
+        assessments[index].assessmentOfferedId = response[0].id;
+      }
     })
     return res.send(assessments);             // this line sends back the response to the client
   })
   .catch( function(err) {
+    console.log(err)
     return res.status(err.statusCode).send(err.message);
   });
 }
