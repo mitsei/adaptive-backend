@@ -439,6 +439,7 @@ router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
 router.get('/banks/:bankId/offereds/:offeredId/p2results', getPhase2Results);
 router.get('/banks/:bankId/offereds/:offeredId/takeMission', getUserMission);
+router.get('/banks/:bankId/sections/:sectionId/questions', getSectionQuestions);
 router.post('/banks/:bankId/takens/:takenId/questions/:questionId/surrender', getWorkedSolution);
 router.post('/banks/:bankId/takens/:takenId/questions/:questionId/submit', submitAnswer);
 router.get('/departments/:departmentName/library', getDepartmentLibraryId);
@@ -1140,7 +1141,7 @@ function getDepartmentRelationships(req, res) {
 }
 
 function getUserMission(req, res) {
-  // create assessment taken for the given user and get questions
+  // create assessment taken for the given user and get sections
   // user required.
   let username = getUsername(req),
     takenOptions = {
@@ -1153,11 +1154,29 @@ function getUserMission(req, res) {
   .then( function (taken) {
     taken = JSON.parse(taken)
     let options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${taken.id}/questions?raw`,
+      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${taken.id}/sections?raw`,
       proxy: username
     };
     return qbank(options)
   })
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function getSectionQuestions(req, res) {
+  // get user's questions for a specific section
+  // user required.
+  let username = getUsername(req),
+    takenOptions = {
+      path: `assessment/banks/${req.params.bankId}/assessmentsections/${req.params.sectionId}/questions?raw`,
+      proxy: username
+    };
+
+  qbank(takenOptions)
   .then( function(result) {
     return res.send(result);             // this line sends back the response to the client
   })
@@ -1206,6 +1225,7 @@ function submitAnswer(req, res) {
     return res.status(err.statusCode).send(err.message);
   });
 }
+
 
 
 module.exports = router;
