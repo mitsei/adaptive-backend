@@ -446,6 +446,7 @@ router.get('/departments/:departmentName/library', getDepartmentLibraryId);
 router.get('/departments/:departmentName/modules', getDepartmentModules);
 router.get('/departments/:departmentName/outcomes', getDepartmentOutcomes);
 router.get('/departments/:departmentName/relationships', getDepartmentRelationships);
+router.get('/repositories/:repositoryId/assets/:assetId/url', getAssetCloudFrontUrl)
 router.get('/hierarchies/:nodeId/children', getNodeChildren);
 router.post('/hierarchies/:nodeId/children', setNodeChildren);
 router.get('/objectivebanks/:contentLibraryId/modules', getModules);
@@ -1226,6 +1227,23 @@ function submitAnswer(req, res) {
   });
 }
 
+function getAssetCloudFrontUrl(req, res) {
+  // get an image's CloudFront URL and return it
+  let options = {
+      path: `repository/repositories/${req.params.repositoryId}/assets/${req.params.assetId}/url`,
+      proxy: username
+    };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    console.log(result)
+    return res.send(result.url);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
 
 
 module.exports = router;
