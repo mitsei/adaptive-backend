@@ -1230,8 +1230,7 @@ function submitAnswer(req, res) {
 function getAssetCloudFrontUrl(req, res) {
   // get an image's CloudFront URL and return it
   let options = {
-      path: `repository/repositories/${req.params.repositoryId}/assets/${req.params.assetId}/url`,
-      proxy: username
+      path: `repository/repositories/${req.params.repositoryId}/assets/${req.params.assetId}/url`
     };
 
   // do this async-ly
