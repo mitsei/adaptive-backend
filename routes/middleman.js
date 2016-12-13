@@ -1230,17 +1230,20 @@ function submitAnswer(req, res) {
 function getAssetCloudFrontUrl(req, res) {
   // get an image's CloudFront URL and return it
   let options = {
-      path: `repository/repositories/${req.params.repositoryId}/assets/${req.params.assetId}/url`
+      path: `repository/repositories/${req.params.repositoryId}/assets/${req.params.assetId}/url`,
+      followRedirect: false
     };
 
   // do this async-ly
   qbank(options)
   .then( function(result) {
-    console.log(result)
-    return res.send(result.url);             // this line sends back the response to the client
+    // This should error out and not get here
+    return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
-    return res.status(err.statusCode).send(err.message);
+    // console.log(err)
+    return res.send(err.response.headers.location);             // this line sends back the response to the client
+    // return res.status(err.statusCode).send(err.message);
   });
 }
 
