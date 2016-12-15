@@ -446,6 +446,7 @@ router.get('/departments/:departmentName/library', getDepartmentLibraryId);
 router.get('/departments/:departmentName/modules', getDepartmentModules);
 router.get('/departments/:departmentName/outcomes', getDepartmentOutcomes);
 router.get('/departments/:departmentName/relationships', getDepartmentRelationships);
+router.get('/repositories/:repositoryId/assets/:assetId/url', getAssetCloudFrontUrl)
 router.get('/hierarchies/:nodeId/children', getNodeChildren);
 router.post('/hierarchies/:nodeId/children', setNodeChildren);
 router.get('/objectivebanks/:contentLibraryId/modules', getModules);
@@ -698,24 +699,29 @@ function getMissions(req, res) {
     }
 
     assessments = result;
-    _.each(assessments, (assessment) => {
-      let offeredOption = {
-        path: `assessment/banks/${req.params.bankId}/assessments/${assessment.id}/assessmentsoffered?raw`
-      };
-      offeredsOptions.push(qbank(offeredOption));
-    });
-    return Q.all(offeredsOptions);
+    // TODO: change this to use the /banks/<bankId>/bulkassessmentsoffered endpoint
+    let assessmentIds = _.map(assessments, assessment => `assessmentIds=${assessment.id}`)
+    let params = {
+      path: `assessment/banks/${req.params.bankId}/bulkassessmentsoffered?raw&${assessmentIds.join('&')}`
+    }
+    return qbank(params)
   })
-  .then( (responses) => {
-    _.each(responses, (responseString, index) => {
-      let response = JSON.parse(responseString);
-      if (response.length > 0) {
-        // This means an offered was not created ... which is BAD
-        assessments[index].startTime = response[0].startTime;
-        assessments[index].deadline = response[0].deadline;
-        assessments[index].assessmentOfferedId = response[0].id;
+  .then( (response) => {
+    let offereds = JSON.parse(response)
+
+    _.each(assessments, (assessment) => {
+      let offered = _.find(offereds, {assessmentId: assessment.id})
+      if (offered) {
+        assessment.startTime = offered.startTime;
+        assessment.deadline = offered.deadline;
+        assessment.assessmentOfferedId = offered.id;
+      } else {
+        assessment.startTime = {};
+        assessment.deadline = {};
+        assessment.assessmentOfferedId = null;
       }
     })
+
     return res.send(assessments);             // this line sends back the response to the client
   })
   .catch( function(err) {
@@ -882,6 +888,8 @@ function addPersonalizedMission(req, res) {
   //   only a single student has authorization to take
   // It creates the mission in a child bank of
   //   genusTypeId: "assessment-bank-genus%3Afbw-private-missions%40ODL.MIT.EDU"
+
+  // TODO: Change this to use a server-side bulk call, somehow?
   let allPrivateBankIds = [],
     allMissions = [],
     privateBankPromises = [];
@@ -1154,7 +1162,7 @@ function getUserMission(req, res) {
   .then( function (taken) {
     taken = JSON.parse(taken)
     let options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${taken.id}/sections?raw`,
+      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${taken.id}/questions?raw`,
       proxy: username
     };
     return qbank(options)
@@ -1226,6 +1234,25 @@ function submitAnswer(req, res) {
   });
 }
 
+function getAssetCloudFrontUrl(req, res) {
+  // get an image's CloudFront URL and return it
+  let options = {
+      path: `repository/repositories/${req.params.repositoryId}/assets/${req.params.assetId}/url`,
+      followRedirect: false
+    };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    // This should error out and not get here
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    // console.log(err)
+    return res.send(err.response.headers.location);             // this line sends back the response to the client
+    // return res.status(err.statusCode).send(err.message);
+  });
+}
 
 
 module.exports = router;
