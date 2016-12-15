@@ -699,7 +699,6 @@ function getMissions(req, res) {
     }
 
     assessments = result;
-    // TODO: change this to use the /banks/<bankId>/bulkassessmentsoffered endpoint
     let assessmentIds = _.map(assessments, assessment => `assessmentIds=${assessment.id}`)
     let params = {
       path: `assessment/banks/${req.params.bankId}/bulkassessmentsoffered?raw&${assessmentIds.join('&')}`
@@ -947,14 +946,53 @@ function addPersonalizedMission(req, res) {
 }
 
 function deleteMission(req, res) {
-  // delete assessment + offered
-  let offeredOptions = {
-    method: 'DELETE',
-    path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.body.assessmentOfferedId}`
-  };
+  // first, get all takens (we're assuming there is
+  //    some sort of validation on the client-end, before
+  //    calling this endpoint)
+  // then delete assessment + offered
 
-  qbank(offeredOptions)
-  .then( function(result) {
+  let getOfferedsOptions = {
+    path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}/assessmentsoffered?raw`
+  }
+  let deleteOfferedOptions = []
+
+  qbank(getOfferedsOptions)
+  .then((offereds) => {
+    let promises = []
+    _.each(JSON.parse(offereds), (offered) => {
+      let getTakenOptions = {
+        path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${offered.id}/assessmentstaken?raw`
+      }
+      deleteOfferedOptions.push({
+        method: 'DELETE',
+        path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${offered.id}`
+      })
+      promises.push(qbank(getTakenOptions))
+    })
+
+    return Q.all(promises)
+  })
+  .then((takenResponses) => {
+    let promises = []
+    _.each(takenResponses, (takens) => {
+      takens = JSON.parse(takens)
+      _.each(takens, (taken) => {
+        let deleteTakenOptions = {
+          method: 'DELETE',
+          path: `assessment/banks/${req.params.bankId}/assessmentstaken/${taken.id}`
+        }
+        promises.push(qbank(deleteTakenOptions))
+      })
+    })
+
+    return Q.all(promises)
+  })
+  .then((res) => {
+    return Q.all(_.map(deleteOfferedOptions, (option) => {
+      return qbank(option)
+    }))
+  })
+  .then((res) => {
     let assessmentOption = {
       method: 'DELETE',
       path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}`
