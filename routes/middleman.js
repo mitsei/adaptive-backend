@@ -888,7 +888,6 @@ function addPersonalizedMission(req, res) {
   // It creates the mission in a child bank of
   //   genusTypeId: "assessment-bank-genus%3Afbw-private-missions%40ODL.MIT.EDU"
 
-  // TODO: Change this to use a server-side bulk call, somehow?
   let allPrivateBankIds = [],
     allMissions = [],
     privateBankPromises = [];
@@ -903,41 +902,37 @@ function addPersonalizedMission(req, res) {
     return Q.when(linkPrivateBanksIntoTerm(allPrivateBankIds, req.params.bankId))
   })
   .then( function (authzResults) {
-    // for each private bank Id, create the mission
-    let promises = []
+    // create the list of assessments, like
+    //   {
+    //     assessments:     [{
+    //         bankId: 'assessment.Bank%3A123%40ODL.MIT.EDU',
+    //         recordTypeIds': [''],
+    //         name: 'Quiz 1',
+    //         sections: [],
+    //         assessmentsOffered: []
+    //     }]
+    //   }
+    let createAssessmentsOptions = {
+      path: 'assessment/bulkassessments',
+      method: 'POST',
+      data: {
+        assessments: []
+      }
+    }
     _.each(allPrivateBankIds, function (privateBankId, index) {
-      let assessmentOptions = {
-        data: req.body[index],
-        method: 'POST',
-        path: `assessment/banks/${privateBankId}/assessments`
-      };
-      promises.push(qbank(assessmentOptions))
+      let assessmentData = req.body[index]
+      let assessmentOptions = _.assign({}, assessmentData, {
+        assessmentOffereds: [{
+          startTime: assessmentData.startTime,
+          deadline: assessmentData.deadline
+        }],
+        bankId: privateBankId
+      })
+      createAssessmentsOptions.data.assessments.push(assessmentOptions)
     })
-    return Q.all(promises)
+    return qbank(createAssessmentsOptions)
   })
-  .then( function (assessments) {
-    let promises = []
-    // now create the offereds
-    _.each(assessments, function (assessment, index) {
-      assessment = JSON.parse(assessment)
-      allMissions.push(assessment)
-      let offeredOption = {
-        data: req.body[index],
-        method: 'POST',
-        path: `assessment/banks/${assessment.bankId}/assessments/${assessment.id}/assessmentsoffered`
-      };
-      promises.push(qbank(offeredOption))
-    })
-    return Q.all(promises)
-  })
-  .then( (results) => {
-
-    _.each(results, function (offered, index) {
-      offered = JSON.parse(offered)
-      allMissions[index].startTime = offered.startTime
-      allMissions[index].deadline = offered.deadline
-      allMissions[index].assessmentOfferedId = offered.id
-    })
+  .then( (allMissions) => {
     return res.send(allMissions);             // this line sends back the response to the client
   })
   .catch( function(err) {
