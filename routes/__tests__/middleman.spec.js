@@ -136,7 +136,7 @@ describe('Missions', function() {
   });
 
   // test POST on algebra missions
-  let postMissionId;
+  let postMissionId, assessmentOfferedId;
   it('should create a new Phase I mission on /middleman/banks/:bankId/missions POST', done => {
 
     chai.request(server)
@@ -144,10 +144,12 @@ describe('Missions', function() {
    .send(dummy_mission_post)
    .end((err, res) => {
      res.should.have.status(200);
-     console.log('result', res.text)
      let result = JSON.parse(res.text);
+     console.log('result', result)
+
      result.displayName.text.should.eql('npm test mission')
      postMissionId = result.id;
+     assessmentOfferedId = result.assessmentOfferedId;
 
      done();
    });
@@ -158,13 +160,12 @@ describe('Missions', function() {
 
     chai.request(server)
    .delete(`/middleman//banks/${ALGEBRA_BANK_ID}/missions/${postMissionId}`)
-   .send(dummy_mission_post)
+   .send({ assessmentOfferedId: assessmentOfferedId})
    .end((err, res) => {
      res.should.have.status(200);
-     console.log('result', res.text)
      let result = JSON.parse(res.text);
-     result.displayName.text.should.eql('npm test mission')
-     postMissionId = result.id;
+
+     console.log('result', result)
 
      done();
    });
