@@ -1,5 +1,6 @@
 var express = require('express');
 var path = require('path');
+const http = require('http');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
@@ -71,8 +72,12 @@ app.use(function(err, req, res, next) {
   });
 });
 
-let listener = app.listen(process.env.PORT || 8888, function(){
-    console.log('Listening on port ' + listener.address().port); //Listening on port 8888
-});
+const httpServer = http.createServer(app);
+httpServer.listen(process.env.PORT || 8888);
 
-module.exports = app;
+// let listener = app.listen(process.env.PORT || 8888, function(){
+//     console.log('Listening on port ' + listener.address().port); //Listening on port 8888
+// });
+
+// module.exports = app;
+module.exports = httpServer;
