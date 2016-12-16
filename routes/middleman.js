@@ -670,41 +670,17 @@ function getPhase2Results(req, res) {
 }
 
 
-function getMissions(req, res) {
-  // get assessments + offereds
-  let username = getUsername(req),
-    assessmentOptions,
-    assessments = []
-  if (username) {
-    assessmentOptions = {
-      path: `assessment/banks/${req.params.bankId}/assessments?raw`
-    }
-    // we don't actually need to set the proxy here, because
-    // students can't see assessments in authz -- so still needs
-    // to be FbW user. Just need a different filter.
-  } else {
-    assessmentOptions = {
-      path: `assessment/banks/${req.params.bankId}/assessments?sections&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
-    }
+function getAssessmentsOfferedInBulk(bankId, assessments) {
+  // now concat with offereds for each assessment
+  if (assessments.length == 0) {
+    return Q.when([]);
   }
 
-  // do this async-ly
-  qbank(assessmentOptions)
-  .then( function(result) {
-    // now concat with offereds for each assessment
-    let offeredsOptions = [];
-    result = JSON.parse(result);
-    if (result.length == 0) {
-      return Q.when([]);
-    }
-
-    assessments = result;
-    let assessmentIds = _.map(assessments, assessment => `assessmentIds=${assessment.id}`)
-    let params = {
-      path: `assessment/banks/${req.params.bankId}/bulkassessmentsoffered?raw&${assessmentIds.join('&')}`
-    }
-    return qbank(params)
-  })
+  let assessmentIds = _.map(assessments, assessment => `assessmentIds=${assessment.id}`)
+  let params = {
+    path: `assessment/banks/${bankId}/bulkassessmentsoffered?raw&${assessmentIds.join('&')}`
+  }
+  return qbank(params)
   .then( (response) => {
     let offereds = JSON.parse(response)
 
@@ -721,12 +697,63 @@ function getMissions(req, res) {
       }
     })
 
-    return res.send(assessments);             // this line sends back the response to the client
+    return Q.when(assessments)
   })
-  .catch( function(err) {
-    console.log(err)
-    return res.status(err.statusCode).send(err.message);
-  });
+}
+
+
+function getMissions(req, res) {
+  // get assessments + offereds
+  // For students with username, use the passed-in bank, which should
+  //   be the privateBankId.
+  // For instructors without username, the passed-in bank is the
+  //   term bank, which causes lag on the server-side (because it will also
+  //   search across all privateBanks, and it takes awhile to compute the
+  //   hierarchy). For them, find the sharedBankId and use that instead.
+  let username = getUsername(req)
+  if (username) {
+    let assessmentOptions = {
+      path: `assessment/banks/${req.params.bankId}/assessments?raw`
+    }
+    // we don't actually need to set the proxy here, because
+    // students can't see assessments in authz -- so still needs
+    // to be FbW user. Just need a different filter.
+
+    // do this async-ly
+    qbank(assessmentOptions)
+    .then( function(results) {
+      return getAssessmentsOfferedInBulk(req.params.bankId, JSON.parse(results))
+    })
+    .then( (assessmentsWithOffereds) => {
+      return res.send(assessmentsWithOffereds);             // this line sends back the response to the client
+    })
+    .catch( function(err) {
+      console.log(err)
+      return res.status(err.statusCode).send(err.message);
+    });
+  } else {
+    let sharedBankId
+    getSharedBankId(req.params.bankId)
+    .then((sharedId) => {
+      sharedBankId = sharedId
+      let assessmentOptions = {
+        path: `assessment/banks/${sharedBankId}/assessments?sections&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
+      }
+
+      // do this async-ly
+      return qbank(assessmentOptions)
+    })
+    .then( function(results) {
+      return getAssessmentsOfferedInBulk(sharedBankId, JSON.parse(results))
+    })
+    .then( (assessmentsWithOffereds) => {
+      return res.send(assessmentsWithOffereds);             // this line sends back the response to the client
+    })
+    .catch( function(err) {
+      //console.log(err)
+      return res.status(err.statusCode).send(err.message);
+    });
+  }
 }
 
 function hasBasicAuthz(req, res) {
