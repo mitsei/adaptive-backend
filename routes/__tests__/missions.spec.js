@@ -145,11 +145,14 @@ describe('Missions', function() {
    .end((err, res) => {
      res.should.have.status(200);
      let result = JSON.parse(res.text);
-     console.log('result', result)
+    //  console.log('result', result
 
      result.displayName.text.should.eql('npm test mission')
      postMissionId = result.id;
      assessmentOfferedId = result.assessmentOfferedId;
+
+    //  console.log('postMissionId', postMissionId)
+    //  console.log('assessmentOfferedId', assessmentOfferedId)
 
      done();
    });
@@ -160,12 +163,9 @@ describe('Missions', function() {
 
     chai.request(server)
    .delete(`/middleman//banks/${ALGEBRA_BANK_ID}/missions/${postMissionId}`)
-   .send({ assessmentOfferedId: assessmentOfferedId})
    .end((err, res) => {
+     console.log('res.text', res.text)
      res.should.have.status(200);
-     let result = JSON.parse(res.text);
-
-     console.log('result', result)
 
      done();
    });

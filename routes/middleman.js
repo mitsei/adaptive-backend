@@ -434,14 +434,17 @@ router.post('/banks/:bankId/personalmissions', addPersonalizedMission);
 router.get('/banks/:bankId/privatebankid', getPrivateBankIdForUser);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
 router.put('/banks/:bankId/missions/:missionId', editMission);
-router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);
-router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);
+
+router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);      // deprecated?
+router.put('/banks/:bankId/missions/:missionId/items', setMissionItems);      // deprecated?
+
 router.get('/banks/:bankId/offereds/:offeredId/results', getMissionResults);
 router.get('/banks/:bankId/offereds/:offeredId/p2results', getPhase2Results);
 router.get('/banks/:bankId/offereds/:offeredId/takeMission', getUserMission);
 router.get('/banks/:bankId/sections/:sectionId/questions', getSectionQuestions);
 router.post('/banks/:bankId/takens/:takenId/questions/:questionId/surrender', getWorkedSolution);
 router.post('/banks/:bankId/takens/:takenId/questions/:questionId/submit', submitAnswer);
+
 router.get('/departments/:departmentName/library', getDepartmentLibraryId);
 router.get('/departments/:departmentName/modules', getDepartmentModules);
 router.get('/departments/:departmentName/outcomes', getDepartmentOutcomes);
@@ -1217,6 +1220,8 @@ function getUserMission(req, res) {
       method: 'POST',
       proxy: username
     };
+
+    // console.log('username', username, 'takenOptions', takenOptions);
 
   qbank(takenOptions)
   .then( function (taken) {
