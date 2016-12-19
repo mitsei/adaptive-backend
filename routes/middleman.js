@@ -916,6 +916,7 @@ function getPrivateBankIdForUser(req, res) {
   //   privateBankId
   let username = getUsername(req)
   let usersPrivateBankId
+  let subjectSharedBankId
   let privateBankAliasId = privateBankAlias(req.params.bankId, username)
 
   let options = {
@@ -935,7 +936,11 @@ function getPrivateBankIdForUser(req, res) {
       return Q.when(getSharedBankId(req.params.bankId))
     })
     .then((sharedBankId) => {
+      subjectSharedBankId = sharedBankId
       return Q.when(addStudentAuthz(sharedBankId, username))
+    })
+    .then(() => {
+      return Q.when(linkSharedBankToTerm(subjectSharedBankId, usersPrivateBankId))
     })
     .then(() => {
       return res.send(usersPrivateBankId);             // this line sends back the response to the client
@@ -1252,19 +1257,20 @@ function getUserMission(req, res) {
   // create assessment taken for the given user and get sections
   // user required.
   let username = getUsername(req),
+    bankId = privateBankAlias(req.params.bankId, username),
     takenOptions = {
-      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
+      path: `assessment/banks/${bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
       method: 'POST',
       proxy: username
     };
 
-    // console.log('username', username, 'takenOptions', takenOptions);
+  console.log('username', username, 'takenOptions', takenOptions);
 
   qbank(takenOptions)
   .then( function (taken) {
     taken = JSON.parse(taken)
     let options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${taken.id}/questions?raw`,
+      path: `assessment/banks/${bankId}/assessmentstaken/${taken.id}/questions?raw`,
       proxy: username
     };
     return qbank(options)
@@ -1273,6 +1279,7 @@ function getUserMission(req, res) {
     return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
+    console.log(err)
     return res.status(err.statusCode).send(err.message);
   });
 }
