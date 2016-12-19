@@ -907,7 +907,7 @@ function getPrivateBankIdForUser(req, res) {
   }
   qbank(options)
   .then((privateBankId) => {
-    return res.send(usersPrivateBankId);
+    return res.send(privateBankId);
   })
   .catch((error) => {
     Q.when(getPrivateBankId(req.params.bankId, username))
