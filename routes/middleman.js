@@ -729,9 +729,15 @@ function getMissions(req, res) {
     .then( function(results) {
       let assessments = JSON.parse(results)
       _.each(assessments, (assessment) => {
-        assessment.startTime = assessment.offereds[0].startTime
-        assessment.deadline = assessment.offereds[0].deadline
-        assessment.assessmentOfferedId = assessment.offereds[0].id
+        if (assessment.offereds.length > 0) {
+          assessment.startTime = assessment.offereds[0].startTime
+          assessment.deadline = assessment.offereds[0].deadline
+          assessment.assessmentOfferedId = assessment.offereds[0].id
+        } else {
+          assessment.startTime = {}
+          assessment.deadline = {}
+          assessment.assessmentOfferedId = null
+        }
       })
       return res.send(assessments);        // this line sends back the response to the client
     })
@@ -756,9 +762,15 @@ function getMissions(req, res) {
       // these results should have the offereds included
       let assessments = JSON.parse(results)
       _.each(assessments, (assessment) => {
-        assessment.startTime = assessment.offereds[0].startTime
-        assessment.deadline = assessment.offereds[0].deadline
-        assessment.assessmentOfferedId = assessment.offereds[0].id
+        if (assessment.offereds.length > 0) {
+          assessment.startTime = assessment.offereds[0].startTime
+          assessment.deadline = assessment.offereds[0].deadline
+          assessment.assessmentOfferedId = assessment.offereds[0].id
+        } else {
+          assessment.startTime = {}
+          assessment.deadline = {}
+          assessment.assessmentOfferedId = null
+        }
       })
       return res.send(assessments);             // this line sends back the response to the client
     })
