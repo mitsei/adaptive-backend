@@ -906,8 +906,8 @@ function getPrivateBankIdForUser(req, res) {
     path: `assessment/banks/${privateBankAliasId}`
   }
   qbank(options)
-  .then((privateBankId) => {
-    return res.send(privateBankId);
+  .then((privateBank) => {
+    return res.send(privateBank.id);
   })
   .catch((error) => {
     Q.when(getPrivateBankId(req.params.bankId, username))
