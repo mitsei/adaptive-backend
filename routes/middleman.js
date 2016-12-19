@@ -583,13 +583,14 @@ function getMissionResults(req, res) {
   // passed in, then filters by that agentId. Expects username as '@acc.edu'
   // Filtering by specific user is used for showing historical mission results on the
   // student app.
-  // Need to use the privateBankId here, not the sharedBankId, otherwise
-  //   hierarchy / authz on the server will take forever, the first time
   let username = getUsername(req),
     options
   if (username) {
+    // Need to use the privateBankId here, not the sharedBankId, otherwise
+    //   hierarchy / authz on the server will take forever, the first time
+    // So the passed-in bankId must be the subjectBankId
     options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?agentId=${username}&raw`
+      path: `assessment/banks/${privateBankAlias(req.params.bankId, username)}/assessmentsoffered/${req.params.offeredId}/results?agentId=${username}&raw`
     }
   } else {
     options = {
