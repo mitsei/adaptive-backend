@@ -22,7 +22,7 @@ const ASSIGNED_BANK_ID = "assessment.Bank%3A581a39cd71e4822fa62c96cd%40bazzim.MI
 const SECTION_ID = "assessment_authoring.AssessmentPart%3A5855473871e4823bce25a7d9%40bazzim.MIT.EDU";
 const OFFERED_ID = "assessment.AssessmentOffered%3A5855473871e4823bce25a7fd%40bazzim.MIT.EDU";
 
-const STUDENT_ID = 'LUWEEZY'
+const STUDENT_ID = 'LUWEEZY@fbw-visitor.edu'
 
 
 describe('student does Mission', function() {
@@ -34,7 +34,6 @@ describe('student does Mission', function() {
    .set('x-fbw-username', STUDENT_ID)
    .end((err, res) => {
      res.should.have.status(200);
-
      let result = JSON.parse(res.text);
      console.log(result);
 
@@ -57,7 +56,7 @@ describe('student does Mission', function() {
      res.should.have.status(200);
 
      let result = JSON.parse(res.text);
-     console.log(result);
+    //  console.log(result);
 
      done();
    });

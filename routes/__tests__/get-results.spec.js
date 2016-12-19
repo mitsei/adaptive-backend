@@ -31,8 +31,8 @@ describe('Instructor getting results', function() {
    .get(`/middleman/banks/${ASSIGNED_BANK_ID}/offereds/${OFFERED_ID}/results`)
    .set('x-fbw-username', INSTRUCTOR_ID)
    .end((err, res) => {
-     console.log(res.res);
      res.should.have.status(200);
+    //  console.log(res.res);
 
      done();
 
