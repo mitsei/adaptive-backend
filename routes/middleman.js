@@ -710,15 +710,13 @@ function getAssessmentsOfferedInBulk(bankId, assessments) {
 function getMissions(req, res) {
   // get assessments + offereds
   // For students with username, use the passed-in bank, which should
-  //   be the privateBankId.
+  //   be the termBankId. Calculate the privateBankAlias.
   // For instructors without username, the passed-in bank is the
-  //   term bank, which causes lag on the server-side (because it will also
-  //   search across all privateBanks, and it takes awhile to compute the
-  //   hierarchy). For them, find the sharedBankId and use that instead.
+  //   termBankId. Calculate the sharedBankId.
   let username = getUsername(req)
   if (username) {
     let assessmentOptions = {
-      path: `assessment/banks/${req.params.bankId}/assessments?raw&withOffereds`
+      path: `assessment/banks/${privateBankAlias(req.params.bankId, username)}/assessments?raw&withOffereds`
     }
     // we don't actually need to set the proxy here, because
     // students can't see assessments in authz -- so still needs
