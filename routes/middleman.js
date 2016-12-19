@@ -87,6 +87,7 @@ function getUsername(request) {
 
 function addStudentAuthz(bankId, username) {
   // now configure authz so students can "take" in the private bank
+  // add fbw@mit.edu authz to proxy users in this bank
   let now = new Date(),
     endDate = ConvertDate2Dict(now),
     privateBankAuthzOptions = {
@@ -119,6 +120,13 @@ function addStudentAuthz(bankId, username) {
       functionId: functionId
     })
   })
+
+  // privateBankAuthzOptions.data.bulk.push({
+  //   agentId: 'fbw@mit.edu',
+  //   endDate: endDate,
+  //   qualifierId: bankId,
+  //   functionId: 'users.Proxy%3Aproxy%40ODL.MIT.EDU'
+  // })
 
   return qbank(privateBankAuthzOptions)
 }
@@ -588,9 +596,8 @@ function getMissionResults(req, res) {
   if (username) {
     // Need to use the privateBankId here, not the sharedBankId, otherwise
     //   hierarchy / authz on the server will take forever, the first time
-    // So the passed-in bankId must be the subjectBankId
     options = {
-      path: `assessment/banks/${privateBankAlias(req.params.bankId, username)}/assessmentsoffered/${req.params.offeredId}/results?agentId=${username}&raw`
+      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?agentId=${username}&raw`
     }
   } else {
     options = {
@@ -1256,10 +1263,11 @@ function getDepartmentRelationships(req, res) {
 function getUserMission(req, res) {
   // create assessment taken for the given user and get sections
   // user required.
+  // For performance reasons, we expect this to be the privateBankId
+  //   NOT the subjectBankId nor the privateBankAlias
   let username = getUsername(req),
-    bankId = privateBankAlias(req.params.bankId, username),
     takenOptions = {
-      path: `assessment/banks/${bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
+      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
       method: 'POST',
       proxy: username
     };
@@ -1270,7 +1278,7 @@ function getUserMission(req, res) {
   .then( function (taken) {
     taken = JSON.parse(taken)
     let options = {
-      path: `assessment/banks/${bankId}/assessmentstaken/${taken.id}/questions?raw`,
+      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${taken.id}/questions?raw`,
       proxy: username
     };
     return qbank(options)
