@@ -162,7 +162,7 @@ describe('Missions', function() {
   it('should delete the recently-created mission on /middleman/banks/:bankId/missions/:missionId DELETE', done => {
 
     chai.request(server)
-   .delete(`/middleman//banks/${ALGEBRA_BANK_ID}/missions/${postMissionId}`)
+   .delete(`/middleman/banks/${ALGEBRA_BANK_ID}/missions/${postMissionId}`)
    .end((err, res) => {
      console.log('res.text', res.text)
      res.should.have.status(200);
