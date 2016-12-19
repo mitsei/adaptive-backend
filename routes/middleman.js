@@ -16,6 +16,8 @@ let handcar = require('../lib/handcarFetch')(credentials);
 
 var fbwUtils = require('fbw-utils')(credentials);
 var ConvertDate2Dict = fbwUtils.ConvertDateToDictionary;
+let privateBankAlias = fbwUtils.privateBankAlias;
+let sharedBankAlias = fbwUtils.sharedBankAlias;
 
 // these need to be the same constant value in the client-apps, too
 let SHARED_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-shared-missions%40ODL.MIT.EDU"
@@ -155,23 +157,23 @@ function linkPrivateBanksIntoTerm(privateBankIds, termBankId) {
 // utility method to generate the private bank alias. Needs to match
 // the method in the client-side apps as well...should be in a
 // shared library.
-function privateBankAlias(termBankId, username) {
-  // should return something like "private-bank%3A1234567890abcdef12345678-S12345678.acc.edu%40ODL.MIT.EDU"
-  if (termBankId.indexOf('@') >= 0) {
-    termBankId = encodeURIComponent(termBankId)
-  }
-  return `private-bank%3A${termBankId.match(/%3A(.*)%40/)[1]}-${username.replace('@', '.')}%40ODL.MIT.EDU`
-}
-
-function sharedBankAlias(termBankId) {
-  // should return something like "shared-bank%3Aassessment.Bank%253A1234567890abcdef12345678%2540ODL.MIT.EDU%40ODL.MIT.EDU"
-  if (termBankId.indexOf('@') >= 0) {
-    termBankId = encodeURIComponent(encodeURIComponent(termBankId))
-  } else {
-    termBankId = encodeURIComponent(termBankId)
-  }
-  return `shared-bank%3A${termBankId}%40ODL.MIT.EDU`
-}
+// function privateBankAlias(termBankId, username) {
+//   // should return something like "private-bank%3A1234567890abcdef12345678-S12345678.acc.edu%40ODL.MIT.EDU"
+//   if (termBankId.indexOf('@') >= 0) {
+//     termBankId = encodeURIComponent(termBankId)
+//   }
+//   return `private-bank%3A${termBankId.match(/%3A(.*)%40/)[1]}-${username.replace('@', '.')}%40ODL.MIT.EDU`
+// }
+//
+// function sharedBankAlias(termBankId) {
+//   // should return something like "shared-bank%3Aassessment.Bank%253A1234567890abcdef12345678%2540ODL.MIT.EDU%40ODL.MIT.EDU"
+//   if (termBankId.indexOf('@') >= 0) {
+//     termBankId = encodeURIComponent(encodeURIComponent(termBankId))
+//   } else {
+//     termBankId = encodeURIComponent(termBankId)
+//   }
+//   return `shared-bank%3A${termBankId}%40ODL.MIT.EDU`
+// }
 
 // utility method to get the sharedBankId for CRUD on shared missions...
 function createSharedBank(bankId) {
@@ -742,8 +744,10 @@ function getMissions(req, res) {
     //   correctly in the instructor app, so we can just calculate it here
     //   instead of fetching / creating.
     let sharedBankId = sharedBankAlias(req.params.bankId)
+
+    // removing "sections" because I don't think we need that flag here
     let assessmentOptions = {
-      path: `assessment/banks/${sharedBankId}/assessments?sections&isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
+      path: `assessment/banks/${sharedBankId}/assessments?isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
     }
 
     // do this async-ly
