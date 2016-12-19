@@ -269,7 +269,6 @@ function getPrivateBankId(bankId, username) {
   // assumption is that the shared bank already exists
   // the private bank may or may not exist
   // this method does NOT link the private bank into the hierarchy
-  // we need to do that in bulk to prevent collisions
   let privateBankAliasId = privateBankAlias(bankId, username),
     privateBankTestOptions = {
       path: `assessment/banks/${privateBankAliasId}`
@@ -896,25 +895,39 @@ function addSharedMission(req, res) {
 function getPrivateBankIdForUser(req, res) {
   // return the user's private bank, within the given bank
   // create it if necessary
+  // BUT, if the privateBank already exists, assume
+  //   the hierarchy and authz has been set...so just return the
+  //   privateBankId
   let username = getUsername(req)
   let usersPrivateBankId
-  Q.when(getPrivateBankId(req.params.bankId, username))
-  .then((privateBankId) => {
-    usersPrivateBankId = privateBankId
-    return Q.when(linkPrivateBanksIntoTerm([privateBankId], req.params.bankId))
+  let privateBankAliasId = privateBankAlias(req.params.bankId, username)
+
+  let options = {
+    path: `assessment/banks/${privateBankAliasId}`
+  }
+  qbank(options)
+  .then((privateBank) => {
+    return res.send(JSON.parse(privateBank).id);
   })
-  .then(() => {
-    return Q.when(getSharedBankId(req.params.bankId))
-  })
-  .then((sharedBankId) => {
-    return Q.when(addStudentAuthz(sharedBankId, username))
-  })
-  .then(() => {
-    return res.send(usersPrivateBankId);             // this line sends back the response to the client
-  })
-  .catch( function(err) {
-    console.log(err)
-    return res.status(err.statusCode).send(err.message);
+  .catch((error) => {
+    Q.when(getPrivateBankId(req.params.bankId, username))
+    .then((privateBankId) => {
+      usersPrivateBankId = privateBankId
+      return Q.when(linkPrivateBanksIntoTerm([privateBankId], req.params.bankId))
+    })
+    .then(() => {
+      return Q.when(getSharedBankId(req.params.bankId))
+    })
+    .then((sharedBankId) => {
+      return Q.when(addStudentAuthz(sharedBankId, username))
+    })
+    .then(() => {
+      return res.send(usersPrivateBankId);             // this line sends back the response to the client
+    })
+    .catch( function(err) {
+      console.log(err)
+      return res.status(err.statusCode).send(err.message);
+    })
   })
 }
 
