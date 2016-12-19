@@ -716,7 +716,7 @@ function getMissions(req, res) {
   let username = getUsername(req)
   if (username) {
     let assessmentOptions = {
-      path: `assessment/banks/${req.params.bankId}/assessments?raw`
+      path: `assessment/banks/${req.params.bankId}/assessments?raw&withOffereds`
     }
     // we don't actually need to set the proxy here, because
     // students can't see assessments in authz -- so still needs
@@ -725,32 +725,38 @@ function getMissions(req, res) {
     // do this async-ly
     qbank(assessmentOptions)
     .then( function(results) {
-      return getAssessmentsOfferedInBulk(req.params.bankId, JSON.parse(results))
-    })
-    .then( (assessmentsWithOffereds) => {
-      return res.send(assessmentsWithOffereds);             // this line sends back the response to the client
+      let assessments = JSON.parse(results)
+      _.each(assessments, (assessment) => {
+        assessment.startTime = assessment.offereds[0].startTime
+        assessment.deadline = assessment.offereds[0].deadline
+        assessment.assessmentOfferedId = assessment.offereds[0].id
+      })
+      return res.send(assessments);        // this line sends back the response to the client
     })
     .catch( function(err) {
       console.log(err)
       return res.status(err.statusCode).send(err.message);
     });
   } else {
-    let sharedBankId
-    getSharedBankId(req.params.bankId)
-    .then((sharedId) => {
-      sharedBankId = sharedId
-      let assessmentOptions = {
-        path: `assessment/banks/${sharedBankId}/assessments?sections&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
-      }
+    // NOTE -- this assumes the sharedBankAlias has already been set
+    //   correctly in the instructor app, so we can just calculate it here
+    //   instead of fetching / creating.
+    let sharedBankId = sharedBankAlias(req.params.bankId)
+    let assessmentOptions = {
+      path: `assessment/banks/${sharedBankId}/assessments?sections&isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
+    }
 
-      // do this async-ly
-      return qbank(assessmentOptions)
-    })
+    // do this async-ly
+    qbank(assessmentOptions)
     .then( function(results) {
-      return getAssessmentsOfferedInBulk(sharedBankId, JSON.parse(results))
-    })
-    .then( (assessmentsWithOffereds) => {
-      return res.send(assessmentsWithOffereds);             // this line sends back the response to the client
+      // these results should have the offereds included
+      let assessments = JSON.parse(results)
+      _.each(assessments, (assessment) => {
+        assessment.startTime = assessment.offereds[0].startTime
+        assessment.deadline = assessment.offereds[0].deadline
+        assessment.assessmentOfferedId = assessment.offereds[0].id
+      })
+      return res.send(assessments);             // this line sends back the response to the client
     })
     .catch( function(err) {
       //console.log(err)
