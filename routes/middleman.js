@@ -596,7 +596,7 @@ function getMissionResults(req, res) {
     }
   } else {
     options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?raw`
+      path: `assessment/banks/${privateBankAlias(req.params.bankId, 'instructor')}/assessmentsoffered/${req.params.offeredId}/results?raw`
     }
   }
 
@@ -606,7 +606,7 @@ function getMissionResults(req, res) {
     return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
-    // console.log('err', err);
+    console.log('err', err);
     return res.status(err.statusCode).send(err.message);
   });
 }

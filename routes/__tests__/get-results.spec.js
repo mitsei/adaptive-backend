@@ -29,7 +29,7 @@ describe('Instructor getting results', function() {
 
   it(`should get results on the Internal Test Mission (Phase I)`, done => {
     chai.request(server)
-   .get(`/middleman/banks/${ASSIGNED_BANK_ID}/offereds/${OFFERED_ID}/results`)
+   .get(`/middleman/banks/${ALGEBRA_BANK_ID}/offereds/${OFFERED_ID}/results`)
    .end((err, res) => {
      res.should.have.status(200);
      let result = JSON.parse(res.text);
