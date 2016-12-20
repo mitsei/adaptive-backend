@@ -602,7 +602,7 @@ function getMissionResults(req, res) {
   } else {
 
     options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?raw&isolated`
+      path: `assessment/banks/${sharedBankAlias(req.params.bankId)}/assessmentsoffered/${req.params.offeredId}/results?raw&isolated`
     }
   }
   console.log('options', options)
