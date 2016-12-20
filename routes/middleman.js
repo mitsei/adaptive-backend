@@ -755,6 +755,7 @@ function getMissions(req, res) {
         assessment.deadline = assessment.offereds[0].deadline
         assessment.assessmentOfferedId = assessment.offereds[0].id
       } else {
+        console.log('bad assessment found, missing offered', assessment)
         assessment.startTime = {}
         assessment.deadline = {}
         assessment.assessmentOfferedId = null
