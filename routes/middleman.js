@@ -19,6 +19,10 @@ var ConvertDate2Dict = fbwUtils.ConvertDateToDictionary;
 let privateBankAlias = fbwUtils.privateBankAlias;
 let sharedBankAlias = fbwUtils.sharedBankAlias;
 
+let _getTakens = require('./_getTakens')
+let _deleteTaken = require('./_deleteTaken')
+let _deleteOffered = require('./_deleteOffered')
+
 // these need to be the same constant value in the client-apps, too
 let SHARED_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-shared-missions%40ODL.MIT.EDU"
 let PRIVATE_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-private-missions%40ODL.MIT.EDU"
@@ -87,7 +91,6 @@ function getUsername(request) {
 
 function addStudentAuthz(bankId, username) {
   // now configure authz so students can "take" in the private bank
-  // add fbw@mit.edu authz to proxy users in this bank
   let now = new Date(),
     endDate = ConvertDate2Dict(now),
     privateBankAuthzOptions = {
@@ -120,13 +123,6 @@ function addStudentAuthz(bankId, username) {
       functionId: functionId
     })
   })
-
-  // privateBankAuthzOptions.data.bulk.push({
-  //   agentId: 'fbw@mit.edu',
-  //   endDate: endDate,
-  //   qualifierId: bankId,
-  //   functionId: 'users.Proxy%3Aproxy%40ODL.MIT.EDU'
-  // })
 
   return qbank(privateBankAuthzOptions)
 }
@@ -442,6 +438,7 @@ router.post('/banks/:bankId/missions', addSharedMission);
 router.post('/banks/:bankId/personalmissions', addPersonalizedMission);
 router.get('/banks/:bankId/privatebankid', getPrivateBankIdForUser);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
+router.delete('/banks/:bankId/missions/:missionId/takens', deleteMissionTakens);
 router.put('/banks/:bankId/missions/:missionId', editMission);
 
 router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);      // deprecated?
@@ -594,25 +591,22 @@ function getMissionResults(req, res) {
   let username = getUsername(req),
     options
   if (username) {
-    // Need to use the privateBankId here, not the sharedBankId, otherwise
-    //   hierarchy / authz on the server will take forever, the first time
     options = {
       path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?agentId=${username}&raw`
     }
   } else {
-
     options = {
-      path: `assessment/banks/${sharedBankAlias(req.params.bankId)}/assessmentsoffered/${req.params.offeredId}/results?raw&isolated`
+      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?raw`
     }
   }
-  console.log('options', options)
+
   // do this async-ly
   qbank(options)
   .then( function(result) {
     return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
-    console.log(err)
+    // console.log('err', err);
     return res.status(err.statusCode).send(err.message);
   });
 }
@@ -725,20 +719,31 @@ function getMissions(req, res) {
   // For instructors without username, the passed-in bank is the
   //   termBankId. Calculate the sharedBankId.
   let username = getUsername(req)
-  let assessmentOptions
   if (username) {
-    assessmentOptions = {
+    let assessmentOptions = {
       path: `assessment/banks/${privateBankAlias(req.params.bankId, username)}/assessments?raw&withOffereds`
     }
     // we don't actually need to set the proxy here, because
     // students can't see assessments in authz -- so still needs
     // to be FbW user. Just need a different filter.
-  } else {
-    // NOTE -- this assumes the sharedBankAlias has already been set
-    //   correctly in the instructor app, so we can just calculate it here
-    //   instead of fetching / creating.
-    // let sharedBankId = sharedBankAlias(req.params.bankId)
 
+    // do this async-ly
+    qbank(assessmentOptions)
+    .then( function(results) {
+      let assessments = JSON.parse(results)
+      _.each(assessments, (assessment) => {
+        assessment.startTime = assessment.offereds[0].startTime
+        assessment.deadline = assessment.offereds[0].deadline
+        assessment.assessmentOfferedId = assessment.offereds[0].id
+      })
+      return res.send(assessments);        // this line sends back the response to the client
+    })
+    .catch( function(err) {
+      console.log(err)
+      return res.status(err.statusCode).send(err.message);
+    });
+  } else {
+    // NOTE -- this assumes the privateBankAlias has already been set for instructor
     // removing "sections" because I don't think we need that flag here
     assessmentOptions = {
       path: `assessment/banks/${privateBankAlias(req.params.bankId, 'instructor')}/assessments?isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
@@ -756,7 +761,8 @@ function getMissions(req, res) {
         assessment.deadline = assessment.offereds[0].deadline
         assessment.assessmentOfferedId = assessment.offereds[0].id
       } else {
-        console.log('bad assessment found, missing offered', assessment)
+        console.log("found an assessment with offereds -- error??")
+        console.log(assessment)
         assessment.startTime = {}
         assessment.deadline = {}
         assessment.assessmentOfferedId = null
@@ -904,7 +910,6 @@ function getPrivateBankIdForUser(req, res) {
   //   privateBankId
   let username = getUsername(req)
   let usersPrivateBankId
-  let subjectSharedBankId
   let privateBankAliasId = privateBankAlias(req.params.bankId, username)
 
   let options = {
@@ -924,11 +929,7 @@ function getPrivateBankIdForUser(req, res) {
       return Q.when(getSharedBankId(req.params.bankId))
     })
     .then((sharedBankId) => {
-      subjectSharedBankId = sharedBankId
       return Q.when(addStudentAuthz(sharedBankId, username))
-    })
-    .then(() => {
-      return Q.when(linkSharedBankToTerm(subjectSharedBankId, usersPrivateBankId))
     })
     .then(() => {
       return res.send(usersPrivateBankId);             // this line sends back the response to the client
@@ -1009,45 +1010,35 @@ function deleteMission(req, res) {
   let getOfferedsOptions = {
     path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}/assessmentsoffered?raw`
   }
-  let deleteOfferedOptions = []
 
+  let deleteOfferedPromises;
   qbank(getOfferedsOptions)
-  .then((offereds) => {
-    let promises = []
-    _.each(JSON.parse(offereds), (offered) => {
-      let getTakenOptions = {
-        path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${offered.id}/assessmentstaken?raw`
-      }
-      deleteOfferedOptions.push({
-        method: 'DELETE',
-        path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${offered.id}`
-      })
-      promises.push(qbank(getTakenOptions))
-    })
+  .then((offeredsRaw) => {
+    let offereds = JSON.parse(offeredsRaw);
 
-    return Q.all(promises)
+    // build this array for later use
+    deleteOfferedPromises = _.map(offereds, offered => _deleteOffered(offered.id, req.params.bankId));
+
+    // get takens
+    return Q.all(_.map(offereds, offered => _getTakens(offered.id, req.params.bankId)))
   })
   .then((takenResponses) => {
-    let promises = []
-    _.each(takenResponses, (takens) => {
-      takens = JSON.parse(takens)
-      _.each(takens, (taken) => {
-        let deleteTakenOptions = {
-          method: 'DELETE',
-          path: `assessment/banks/${req.params.bankId}/assessmentstaken/${taken.id}`
-        }
-        promises.push(qbank(deleteTakenOptions))
-      })
-    })
+    // must delete takens first
+    let takens = _.map(takenResponses, _.ary(JSON.parse, 1));
+    let deleteTakenPromises = _.compact(_.map(takens, taken => _deleteTaken(taken.id, req.params.bankId)));
+    // console.log('takens', takens);
+    // console.log('deleteTakenPromises', deleteTakenPromises);
 
-    return Q.all(promises)
+    return deleteTakenPromises.length > 0 ? Q.all(deleteTakenPromises) : Q.when('no takens');
   })
-  .then((res) => {
-    return Q.all(_.map(deleteOfferedOptions, (option) => {
-      return qbank(option)
-    }))
+  .then((result) => {
+    // then delete offereds
+    // console.log('deleted takens', result);
+
+    return Q.all(deleteOfferedPromises);
   })
-  .then((res) => {
+  .then((result) => {
+    // finally delete the assessment
     let assessmentOption = {
       method: 'DELETE',
       path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}`
@@ -1060,6 +1051,34 @@ function deleteMission(req, res) {
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
   });
+}
+
+function deleteMissionTakens(req, res) {
+  let getOfferedsOptions = {
+    path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}/assessmentsoffered?raw`
+  }
+
+  qbank(getOfferedsOptions)
+  .then((offeredsRaw) => {
+    let offereds = JSON.parse(offeredsRaw);
+
+    // build this array for later use
+    deleteOfferedPromises = _.map(offereds, offered => _deleteOffered(offered.id, req.params.bankId));
+
+    // get takens
+    return Q.all(_.map(offereds, offered => _getTakens(offered.id, req.params.bankId)))
+  })
+  .then((takenResponses) => {
+    let takens = _.map(takenResponses, _.ary(JSON.parse, 1));
+    let deleteTakenPromises = _.compact(_.map(takens, taken => _deleteTaken(taken.id, req.params.bankId)));
+    // console.log('takens', takens);
+    // console.log('deleteTakenPromises', deleteTakenPromises);
+
+    return deleteTakenPromises.length > 0 ? Q.all(deleteTakenPromises) : Q.when('no takens');
+  })
+  .then( result => {
+    return res.send(result)
+  })
 }
 
 function editMission(req, res) {
@@ -1244,8 +1263,6 @@ function getDepartmentRelationships(req, res) {
 function getUserMission(req, res) {
   // create assessment taken for the given user and get sections
   // user required.
-  // For performance reasons, we expect this to be the privateBankId
-  //   NOT the subjectBankId nor the privateBankAlias
   let username = getUsername(req),
     takenOptions = {
       path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
@@ -1253,7 +1270,7 @@ function getUserMission(req, res) {
       proxy: username
     };
 
-  console.log('username', username, 'takenOptions', takenOptions);
+    // console.log('username', username, 'takenOptions', takenOptions);
 
   qbank(takenOptions)
   .then( function (taken) {
@@ -1268,7 +1285,6 @@ function getUserMission(req, res) {
     return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
-    console.log(err)
     return res.status(err.statusCode).send(err.message);
   });
 }
@@ -1325,6 +1341,7 @@ function submitAnswer(req, res) {
   // do this async-ly
   qbank(options)
   .then( function(result) {
+    // console.log('submit result', result)
     return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {

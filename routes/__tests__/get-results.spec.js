@@ -19,32 +19,35 @@ const ALGEBRA_BANK_ID = 'assessment.Bank%3A576d6d3271e4828c441d721a%40bazzim.MIT
 const ACCOUNTING_BANK_ID = 'assessment.Bank%3A57d70ed471e482a74879349a%40bazzim.MIT.EDU';
 
 const ASSIGNED_BANK_ID = "assessment.Bank%3A581a39cd71e4822fa62c96cd%40bazzim.MIT.EDU";
-const SECTION_ID = "assessment_authoring.AssessmentPart%3A5855473871e4823bce25a7d9%40bazzim.MIT.EDU";
-const OFFERED_ID = "assessment.AssessmentOffered%3A5855473871e4823bce25a7fd%40bazzim.MIT.EDU";
+const OFFERED_ID = "assessment.AssessmentOffered%3A5855473871e4823bce25a7fd%40bazzim.MIT.EDU";    // the internal test mission
+const SECTION_ID = "assessment.AssessmentSection%3A5855518171e4823bce25aa7f%40bazzim.MIT.EDU";    // the first directive: if two lines are parallel
 
-const STUDENT_ID = 'LUWEEZY'
+const STUDENT_ID = 'LUWEEZY@acc.edu'
 const INSTRUCTOR_ID = 'I5055010092@acc.edu'
 
 describe('Instructor getting results', function() {
-  it(`should get results on non-empty Phase I mission: /banks/${ASSIGNED_BANK_ID}/offereds/${OFFERED_ID}/results GET`, done => {
+
+  it(`should get results on the Internal Test Mission (Phase I)`, done => {
     chai.request(server)
    .get(`/middleman/banks/${ASSIGNED_BANK_ID}/offereds/${OFFERED_ID}/results`)
-   .set('x-fbw-username', INSTRUCTOR_ID)
    .end((err, res) => {
-     console.log(res.res);
      res.should.have.status(200);
+     let result = JSON.parse(res.text);
+     result.length.should.be.above(1);        // there's 1 taken just from testing alone + possibly a bunch of others
+    //  console.log(result);
 
      done();
-
    });
   });
 
-  it(`should get results on empty Phase I mission`)
+  it (`should create Phase II missions for students `, done => {
+
+  });
+
 
   it(`should get results on non-empty Phase II missions`)
 
   it(`should get results on empty Phase II missions`)
 
-  it (`should create Phase II missions for students`)
 
 });

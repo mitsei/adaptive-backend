@@ -82,7 +82,7 @@ const dummy_mission_post = {
   displayName: 'npm test mission',
   genusTypeId: "assessment-genus%3Afbw-homework-mission%40ODL.MIT.EDU",
   startTime: momentToQBank(moment()),
-  deadline: momentToQBank(moment([2017, 1, 15])),
+  deadline: momentToQBank(moment().add(30, 'days')),
   recordTypeIds: ["assessment-record-type%3Afbw-phase-i%40ODL.MIT.EDU"],
   sections: _.map(directives, (directive) => {
     let outcomeId = directive.id,
@@ -105,7 +105,7 @@ const dummy_mission_post = {
 describe('Missions', function() {
 
   // test GET algebra
-  it('should get a list of hardcoded-Algebra missions on /middleman/banks/:bankId/missions GET', done => {
+  it('should get a list of hardcoded-Algebra missions ', done => {
     chai.request(server)
    .get(`/middleman/banks/${ALGEBRA_BANK_ID}/missions`)
    .end((err, res) => {
@@ -122,7 +122,7 @@ describe('Missions', function() {
   });
 
   // test GET accounting
-  it('should get a list of hardcoded-Accounting missions on /middleman/banks/:bankId/missions GET', done => {
+  it('should get a list of hardcoded-Accounting missions', done => {
     chai.request(server)
    .get(`/middleman/banks/${ACCOUNTING_BANK_ID}/missions`)
    .end((err, res) => {
@@ -137,15 +137,16 @@ describe('Missions', function() {
 
   // test POST on algebra missions
   let postMissionId, assessmentOfferedId;
-  it('should create a new Phase I mission on /middleman/banks/:bankId/missions POST', done => {
+  it('should create a new Phase I mission', done => {
 
     chai.request(server)
    .post(`/middleman/banks/${ALGEBRA_BANK_ID}/missions`)
    .send(dummy_mission_post)
    .end((err, res) => {
+    //  console.log(res.res);
      res.should.have.status(200);
      let result = JSON.parse(res.text);
-    //  console.log('result', result
+    //  console.log('result', result);
 
      result.displayName.text.should.eql('npm test mission')
      postMissionId = result.id;
@@ -159,16 +160,21 @@ describe('Missions', function() {
   });
 
   // test DELETE on algebra missions
-  it('should delete the recently-created mission on /middleman/banks/:bankId/missions/:missionId DELETE', done => {
+  // technically we should do this in an 'after' block, but since this is so slow, we're fine
+  // after(function(outerDone) {
+    it('should delete the recently-created mission', done => {
 
-    chai.request(server)
-   .delete(`/middleman//banks/${ALGEBRA_BANK_ID}/missions/${postMissionId}`)
-   .end((err, res) => {
-     console.log('res.text', res.text)
-     res.should.have.status(200);
+      chai.request(server)
+     .delete(`/middleman/banks/${ALGEBRA_BANK_ID}/missions/${postMissionId}`)
+     .end((err, res) => {
+      //  console.log('res.text', res.text)
+       res.should.have.status(200);
 
-     done();
-   });
-  });
+       done();
+      //  outerDone();
+     });
+    });
+  // })
+
 
 });
