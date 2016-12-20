@@ -89,6 +89,7 @@ function getUsername(request) {
 
 function addStudentAuthz(bankId, username) {
   // now configure authz so students can "take" in the private bank
+  // add fbw@mit.edu authz to proxy users in this bank
   let now = new Date(),
     endDate = ConvertDate2Dict(now),
     privateBankAuthzOptions = {
@@ -121,6 +122,13 @@ function addStudentAuthz(bankId, username) {
       functionId: functionId
     })
   })
+
+  // privateBankAuthzOptions.data.bulk.push({
+  //   agentId: 'fbw@mit.edu',
+  //   endDate: endDate,
+  //   qualifierId: bankId,
+  //   functionId: 'users.Proxy%3Aproxy%40ODL.MIT.EDU'
+  // })
 
   return qbank(privateBankAuthzOptions)
 }
@@ -589,21 +597,25 @@ function getMissionResults(req, res) {
   let username = getUsername(req),
     options
   if (username) {
+    // Need to use the privateBankId here, not the sharedBankId, otherwise
+    //   hierarchy / authz on the server will take forever, the first time
     options = {
       path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?agentId=${username}&raw`
     }
   } else {
+
     options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?raw`
+      path: `assessment/banks/${sharedBankAlias(req.params.bankId)}/assessmentsoffered/${req.params.offeredId}/results?raw&isolated`
     }
   }
-
+  console.log('options', options)
   // do this async-ly
   qbank(options)
   .then( function(result) {
     return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
+    console.log(err)
     return res.status(err.statusCode).send(err.message);
   });
 }
@@ -716,29 +728,14 @@ function getMissions(req, res) {
   // For instructors without username, the passed-in bank is the
   //   termBankId. Calculate the sharedBankId.
   let username = getUsername(req)
+  let assessmentOptions
   if (username) {
-    let assessmentOptions = {
+    assessmentOptions = {
       path: `assessment/banks/${privateBankAlias(req.params.bankId, username)}/assessments?raw&withOffereds`
     }
     // we don't actually need to set the proxy here, because
     // students can't see assessments in authz -- so still needs
     // to be FbW user. Just need a different filter.
-
-    // do this async-ly
-    qbank(assessmentOptions)
-    .then( function(results) {
-      let assessments = JSON.parse(results)
-      _.each(assessments, (assessment) => {
-        assessment.startTime = assessment.offereds[0].startTime
-        assessment.deadline = assessment.offereds[0].deadline
-        assessment.assessmentOfferedId = assessment.offereds[0].id
-      })
-      return res.send(assessments);        // this line sends back the response to the client
-    })
-    .catch( function(err) {
-      console.log(err)
-      return res.status(err.statusCode).send(err.message);
-    });
   } else {
     // NOTE -- this assumes the sharedBankAlias has already been set
     //   correctly in the instructor app, so we can just calculate it here
@@ -746,27 +743,34 @@ function getMissions(req, res) {
     let sharedBankId = sharedBankAlias(req.params.bankId)
 
     // removing "sections" because I don't think we need that flag here
-    let assessmentOptions = {
+    assessmentOptions = {
       path: `assessment/banks/${sharedBankId}/assessments?isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
     }
+  }
 
-    // do this async-ly
-    qbank(assessmentOptions)
-    .then( function(results) {
-      // these results should have the offereds included
-      let assessments = JSON.parse(results)
-      _.each(assessments, (assessment) => {
+  // do this async-ly
+  qbank(assessmentOptions)
+  .then( function(results) {
+    // these results should have the offereds included
+    let assessments = JSON.parse(results)
+    _.each(assessments, (assessment) => {
+      if (assessment.offereds.length > 0) {
         assessment.startTime = assessment.offereds[0].startTime
         assessment.deadline = assessment.offereds[0].deadline
         assessment.assessmentOfferedId = assessment.offereds[0].id
-      })
-      return res.send(assessments);             // this line sends back the response to the client
+      } else {
+        console.log('bad assessment found, missing offered', assessment)
+        assessment.startTime = {}
+        assessment.deadline = {}
+        assessment.assessmentOfferedId = null
+      }
     })
-    .catch( function(err) {
-      //console.log(err)
-      return res.status(err.statusCode).send(err.message);
-    });
-  }
+    return res.send(assessments);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    //console.log(err)
+    return res.status(err.statusCode).send(err.message);
+  });
 }
 
 function hasBasicAuthz(req, res) {
@@ -903,6 +907,7 @@ function getPrivateBankIdForUser(req, res) {
   //   privateBankId
   let username = getUsername(req)
   let usersPrivateBankId
+  let subjectSharedBankId
   let privateBankAliasId = privateBankAlias(req.params.bankId, username)
 
   let options = {
@@ -922,7 +927,11 @@ function getPrivateBankIdForUser(req, res) {
       return Q.when(getSharedBankId(req.params.bankId))
     })
     .then((sharedBankId) => {
+      subjectSharedBankId = sharedBankId
       return Q.when(addStudentAuthz(sharedBankId, username))
+    })
+    .then(() => {
+      return Q.when(linkSharedBankToTerm(subjectSharedBankId, usersPrivateBankId))
     })
     .then(() => {
       return res.send(usersPrivateBankId);             // this line sends back the response to the client
@@ -1229,6 +1238,8 @@ function getDepartmentRelationships(req, res) {
 function getUserMission(req, res) {
   // create assessment taken for the given user and get sections
   // user required.
+  // For performance reasons, we expect this to be the privateBankId
+  //   NOT the subjectBankId nor the privateBankAlias
   let username = getUsername(req),
     takenOptions = {
       path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
@@ -1236,7 +1247,7 @@ function getUserMission(req, res) {
       proxy: username
     };
 
-    // console.log('username', username, 'takenOptions', takenOptions);
+  console.log('username', username, 'takenOptions', takenOptions);
 
   qbank(takenOptions)
   .then( function (taken) {
@@ -1251,6 +1262,7 @@ function getUserMission(req, res) {
     return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
+    console.log(err)
     return res.status(err.statusCode).send(err.message);
   });
 }
