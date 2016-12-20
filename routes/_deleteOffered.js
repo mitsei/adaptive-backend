@@ -1,14 +1,16 @@
+
 let credentials = require('../credentials');
 let qbank = require('../lib/qBankFetch')(credentials);
 
 /**
   get the takens given an assessment offered
 */
-module.exports = function _getTakens(offeredId, bankId) {
+module.exports = function _deleteOffered(offeredId, bankId) {
   if (!offeredId || !bankId) return null;
 
   let options = {
-    path: `assessment/banks/${bankId}/assessmentsoffered/${offeredId}/assessmentstaken?raw`
+    method: 'DELETE',
+    path: `assessment/banks/${bankId}/assessmentsoffered/${offeredId}`
   };
 
   return qbank(options);
