@@ -606,6 +606,7 @@ function getMissionResults(req, res) {
     return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
+    // console.log('err', err);
     return res.status(err.statusCode).send(err.message);
   });
 }
