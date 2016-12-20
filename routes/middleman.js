@@ -741,10 +741,10 @@ function getMissions(req, res) {
 
     // removing "sections" because I don't think we need that flag here
     assessmentOptions = {
-      path: `assessment/banks/${req.params.bankId}/assessments?isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
+      path: `assessment/banks/${privateBankAlias(req.params.bankId, 'instructor')}/assessments?isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
     }
   }
-
+  console.log('assessmentOptions', assessmentOptions)
   // do this async-ly
   qbank(assessmentOptions)
   .then( function(results) {
