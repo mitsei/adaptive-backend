@@ -19,6 +19,8 @@ var ConvertDate2Dict = fbwUtils.ConvertDateToDictionary;
 let privateBankAlias = fbwUtils.privateBankAlias;
 let sharedBankAlias = fbwUtils.sharedBankAlias;
 
+let _deleteTaken = require('./_deleteTaken')
+
 // these need to be the same constant value in the client-apps, too
 let SHARED_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-shared-missions%40ODL.MIT.EDU"
 let PRIVATE_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-private-missions%40ODL.MIT.EDU"
@@ -434,6 +436,7 @@ router.post('/banks/:bankId/missions', addSharedMission);
 router.post('/banks/:bankId/personalmissions', addPersonalizedMission);
 router.get('/banks/:bankId/privatebankid', getPrivateBankIdForUser);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
+router.delete('/banks/:bankId/missions/:missionId/takens', deleteTakens);
 router.put('/banks/:bankId/missions/:missionId', editMission);
 
 router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);      // deprecated?
@@ -1000,45 +1003,32 @@ function deleteMission(req, res) {
   let getOfferedsOptions = {
     path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}/assessmentsoffered?raw`
   }
-  let deleteOfferedOptions = []
 
   qbank(getOfferedsOptions)
-  .then((offereds) => {
-    let promises = []
-    _.each(JSON.parse(offereds), (offered) => {
-      let getTakenOptions = {
-        path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${offered.id}/assessmentstaken?raw`
-      }
-      deleteOfferedOptions.push({
-        method: 'DELETE',
-        path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${offered.id}`
+    .then((offeredsRaw) => {
+      let offereds = JSON.parse(offeredsRaw));
+      // build this array for later use
+      _.each(offereds, (offered) => {
+        deleteOfferedOptions.push({
+          method: 'DELETE',
+          path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${offered.id}`
+        })
       })
-      promises.push(qbank(getTakenOptions))
-    })
 
-    return Q.all(promises)
+    // get takens
+    return Q.all(_.map(offereds, offered => _getTakens(offered.id, req.params.bankId)))
   })
   .then((takenResponses) => {
-    let promises = []
-    _.each(takenResponses, (takens) => {
-      takens = JSON.parse(takens)
-      _.each(takens, (taken) => {
-        let deleteTakenOptions = {
-          method: 'DELETE',
-          path: `assessment/banks/${req.params.bankId}/assessmentstaken/${taken.id}`
-        }
-        promises.push(qbank(deleteTakenOptions))
-      })
-    })
-
-    return Q.all(promises)
+    // must delete takens first
+    let takens = _.map(takens, _.ary(JSON.parse, 1));
+    return Q.all(_.map(takens, taken => _deleteTaken(taken.id, req.params.bankId)));
   })
   .then((res) => {
-    return Q.all(_.map(deleteOfferedOptions, (option) => {
-      return qbank(option)
-    }))
+    // then delete offereds
+    return Q.all(_.map(deleteOfferedOptions, (option) =>  qbank(option)));
   })
   .then((res) => {
+    // finally delete the assessment
     let assessmentOption = {
       method: 'DELETE',
       path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}`
@@ -1051,6 +1041,10 @@ function deleteMission(req, res) {
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
   });
+}
+
+function deleteMissionTakens(req, res) {
+
 }
 
 function editMission(req, res) {
