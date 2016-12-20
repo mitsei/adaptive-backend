@@ -600,6 +600,7 @@ function getMissionResults(req, res) {
       path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?agentId=${username}&raw`
     }
   } else {
+
     options = {
       path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?raw`
     }
@@ -731,28 +732,6 @@ function getMissions(req, res) {
     // we don't actually need to set the proxy here, because
     // students can't see assessments in authz -- so still needs
     // to be FbW user. Just need a different filter.
-
-    // do this async-ly
-    qbank(assessmentOptions)
-    .then( function(results) {
-      let assessments = JSON.parse(results)
-      _.each(assessments, (assessment) => {
-        if (assessment.offereds.length > 0) {
-          assessment.startTime = assessment.offereds[0].startTime
-          assessment.deadline = assessment.offereds[0].deadline
-          assessment.assessmentOfferedId = assessment.offereds[0].id
-        } else {
-          assessment.startTime = {}
-          assessment.deadline = {}
-          assessment.assessmentOfferedId = null
-        }
-      })
-      return res.send(assessments);        // this line sends back the response to the client
-    })
-    .catch( function(err) {
-      console.log(err)
-      return res.status(err.statusCode).send(err.message);
-    });
   } else {
     // NOTE -- this assumes the sharedBankAlias has already been set
     //   correctly in the instructor app, so we can just calculate it here
@@ -763,30 +742,30 @@ function getMissions(req, res) {
     let assessmentOptions = {
       path: `assessment/banks/${sharedBankId}/assessments?isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
     }
-
-    // do this async-ly
-    qbank(assessmentOptions)
-    .then( function(results) {
-      // these results should have the offereds included
-      let assessments = JSON.parse(results)
-      _.each(assessments, (assessment) => {
-        if (assessment.offereds.length > 0) {
-          assessment.startTime = assessment.offereds[0].startTime
-          assessment.deadline = assessment.offereds[0].deadline
-          assessment.assessmentOfferedId = assessment.offereds[0].id
-        } else {
-          assessment.startTime = {}
-          assessment.deadline = {}
-          assessment.assessmentOfferedId = null
-        }
-      })
-      return res.send(assessments);             // this line sends back the response to the client
-    })
-    .catch( function(err) {
-      //console.log(err)
-      return res.status(err.statusCode).send(err.message);
-    });
   }
+
+  // do this async-ly
+  qbank(assessmentOptions)
+  .then( function(results) {
+    // these results should have the offereds included
+    let assessments = JSON.parse(results)
+    _.each(assessments, (assessment) => {
+      if (assessment.offereds.length > 0) {
+        assessment.startTime = assessment.offereds[0].startTime
+        assessment.deadline = assessment.offereds[0].deadline
+        assessment.assessmentOfferedId = assessment.offereds[0].id
+      } else {
+        assessment.startTime = {}
+        assessment.deadline = {}
+        assessment.assessmentOfferedId = null
+      }
+    })
+    return res.send(assessments);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    //console.log(err)
+    return res.status(err.statusCode).send(err.message);
+  });
 }
 
 function hasBasicAuthz(req, res) {
