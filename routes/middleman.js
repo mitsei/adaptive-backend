@@ -725,8 +725,9 @@ function getMissions(req, res) {
   // For instructors without username, the passed-in bank is the
   //   termBankId. Calculate the sharedBankId.
   let username = getUsername(req)
+  let assessmentOptions
   if (username) {
-    let assessmentOptions = {
+    assessmentOptions = {
       path: `assessment/banks/${privateBankAlias(req.params.bankId, username)}/assessments?raw&withOffereds`
     }
     // we don't actually need to set the proxy here, because
@@ -739,7 +740,7 @@ function getMissions(req, res) {
     let sharedBankId = sharedBankAlias(req.params.bankId)
 
     // removing "sections" because I don't think we need that flag here
-    let assessmentOptions = {
+    assessmentOptions = {
       path: `assessment/banks/${sharedBankId}/assessments?isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
     }
   }
