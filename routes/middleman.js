@@ -737,11 +737,11 @@ function getMissions(req, res) {
     // NOTE -- this assumes the sharedBankAlias has already been set
     //   correctly in the instructor app, so we can just calculate it here
     //   instead of fetching / creating.
-    let sharedBankId = sharedBankAlias(req.params.bankId)
+    // let sharedBankId = sharedBankAlias(req.params.bankId)
 
     // removing "sections" because I don't think we need that flag here
     assessmentOptions = {
-      path: `assessment/banks/${sharedBankId}/assessments?isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
+      path: `assessment/banks/${req.params.bankId}/assessments?isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
     }
   }
 
