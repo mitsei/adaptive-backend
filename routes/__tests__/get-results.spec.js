@@ -126,30 +126,30 @@ describe('Instructor getting results', function() {
    });
   });
 
-  it (`should create Phase II missions for the Internal Test Mission `, done => {
-    let phaseIIMissions = _.map(STUDENTS, student => {
-      let data = {
-        student,
-        displayName: 'Internal Test mission'
-      };
-
-      // this says that all students listed will get the same directives
-      return utilities.createMission(data, 'phaseII', directives, directivesItemsMap)
-    });
-
-    chai.request(server)
-    .post(`/middleman/banks/${ALGEBRA_BANK_ID}/personalmissions`)
-    .send(phaseIIMissions)
-    .end((err, res) => {
-      res.should.have.status(200);
-
-      let result = JSON.parse(res.text);
-      result.length.should.be.eql(STUDENTS.length);
-      // console.log('result', result);
-
-      done();
-    });
-  });
+  // it (`should create Phase II missions for the Internal Test Mission `, done => {
+  //   let phaseIIMissions = _.map(STUDENTS, student => {
+  //     let data = {
+  //       student,
+  //       displayName: 'Internal Test mission'
+  //     };
+  //
+  //     // this says that all students listed will get the same directives
+  //     return utilities.createMission(data, 'phaseII', directives, directivesItemsMap)
+  //   });
+  //
+  //   chai.request(server)
+  //   .post(`/middleman/banks/${ALGEBRA_BANK_ID}/personalmissions`)
+  //   .send(phaseIIMissions)
+  //   .end((err, res) => {
+  //     res.should.have.status(200);
+  //
+  //     let result = JSON.parse(res.text);
+  //     result.length.should.be.eql(STUDENTS.length);
+  //     // console.log('result', result);
+  //
+  //     done();
+  //   });
+  // });
 
 
   it(`should verify that SPOCK can get the offered id and take the Phase II mission`, done => {
@@ -166,7 +166,6 @@ describe('Instructor getting results', function() {
 
         phaseIIs.length.should.be.above(0);
 
-
         done();
       })
   })
@@ -182,29 +181,29 @@ describe('Instructor getting results', function() {
   }
 
   // clean up all the newly-created Phase II missions
-  // after( function(done) {
-  //   this.timeout(20000);
-  //
-  //   chai.request(server)
-  //   .get(`/middleman/banks/${ALGEBRA_BANK_ID}/missions`)
-  //   .set('x-fbw-username', STUDENTS[1].agentId)
-  //   .then( (res) => {
-  //     res.should.have.status(200);
-  //
-  //     let result = JSON.parse(res.text);
-  //     let phaseIIs = _.filter(result, result => result.displayName.text.indexOf('Phase II for Internal test mission') > -1);
-  //     console.log('phaseIIs', phaseIIs);
-  //
-  //     return Q.all(_.map(phaseIIs, mission => deleteMissionAsync(mission.id)))
-  //   })
-  //   .then( res => {
-  //     console.log('res', res)
-  //     done();
-  //   })
-  //   .catch( err => {
-  //     console.log(err)
-  //   });
-  // });
+  after( function(done) {
+    this.timeout(20000);
+
+    chai.request(server)
+    .get(`/middleman/banks/${ALGEBRA_BANK_ID}/missions`)
+    .set('x-fbw-username', STUDENTS[6].agentId)
+    .then( (res) => {
+      res.should.have.status(200);
+
+      let result = JSON.parse(res.text);
+      let phaseIIs = _.filter(result, result => result.displayName.text.indexOf('Phase II for Internal test mission') > -1);
+      console.log('phaseIIs', phaseIIs);
+
+      return Q.all(_.map(phaseIIs, mission => deleteMissionAsync(mission.id)))
+    })
+    .then( res => {
+      console.log('res', res)
+      done();
+    })
+    .catch( err => {
+      console.log(err)
+    });
+  });
 
 
 
