@@ -48,6 +48,7 @@ module.exports = {
     };
 
     if (type === 'phaseI') {
+      missionParams.displayName = missionData.displayName;
       missionParams.genusTypeId = "assessment-genus%3Afbw-homework-mission%40ODL.MIT.EDU";
       missionParams.recordTypeIds = ["assessment-record-type%3Afbw-phase-i%40ODL.MIT.EDU"];
 

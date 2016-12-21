@@ -52,7 +52,7 @@ describe('student doing a Mission', function() {
    });
   });
 
-  it(`should get the questions for section ${SECTION_ID} for ${STUDENT_ID}`, done => {
+  it(`should get the questions for ${STUDENT_ID} (an existing student)`, done => {
     chai.request(server)
    .get(`/middleman/banks/${ASSIGNED_BANK_ID}/sections/${SECTION_ID}/questions`)
    .set('x-fbw-username', STUDENT_ID)
