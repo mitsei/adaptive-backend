@@ -139,22 +139,21 @@ function linkPrivateBanksIntoTerm(privateBankIds, termBankId) {
 
   return qbank(createChildrenOptions)
   .then( function (updatedChildren) {
-    // now add the shared bank as a child of the private bank
-    return getSharedBankId(termBankId)
-  })
-  .then( function (sharedBankId) {
     let promises = []
     _.each(privateBankIds, function (privateBankId) {
       let addSharedBankToPrivateBankOptions = {
         method: 'POST',
         path: `assessment/hierarchies/nodes/${privateBankId}/children`,
         data: {
-          ids: [sharedBankId]
+          ids: [sharedBankAlias(termBankId)]  // not sure this will work or if we need the actual bankId?
         }
       }
       promises.push(qbank(addSharedBankToPrivateBankOptions))
     })
     return Q.all(promises)
+  })
+  .catch((error) => {
+    console.log('error somewhere?', error)
   })
 }
 
