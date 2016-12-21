@@ -731,7 +731,7 @@ function getMissions(req, res) {
     // NOTE -- this assumes the privateBankAlias has already been set for instructor
     // removing "sections" because I don't think we need that flag here
     assessmentOptions = {
-      path: `assessment/banks/${privateBankAlias(req.params.bankId, 'instructor')}/assessments?isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
+      path: `assessment/banks/${privateBankAlias(req.params.bankId, 'instructor')}/assessments?withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
     }
   }
 
