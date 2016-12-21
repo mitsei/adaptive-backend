@@ -596,7 +596,7 @@ function getMissionResults(req, res) {
     }
   } else {
     options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?raw`
+      path: `assessment/banks/${privateBankAlias(req.params.bankId, 'instructor')}/assessmentsoffered/${req.params.offeredId}/results?raw`
     }
   }
 
@@ -606,7 +606,7 @@ function getMissionResults(req, res) {
     return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
-    // console.log('err', err);
+    console.log('err', err);
     return res.status(err.statusCode).send(err.message);
   });
 }
@@ -743,33 +743,37 @@ function getMissions(req, res) {
       return res.status(err.statusCode).send(err.message);
     });
   } else {
-    // NOTE -- this assumes the sharedBankAlias has already been set
-    //   correctly in the instructor app, so we can just calculate it here
-    //   instead of fetching / creating.
-    // let sharedBankId = sharedBankAlias(req.params.bankId)
-
+    // NOTE -- this assumes the privateBankAlias has already been set for instructor
     // removing "sections" because I don't think we need that flag here
-    let assessmentOptions = {
-      path: `assessment/banks/${req.params.bankId}/assessments?isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
+    assessmentOptions = {
+      path: `assessment/banks/${privateBankAlias(req.params.bankId, 'instructor')}/assessments?isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
     }
-
-    // do this async-ly
-    qbank(assessmentOptions)
-    .then( function(results) {
-      // these results should have the offereds included
-      let assessments = JSON.parse(results)
-      _.each(assessments, (assessment) => {
+  }
+  console.log('assessmentOptions', assessmentOptions)
+  // do this async-ly
+  qbank(assessmentOptions)
+  .then( function(results) {
+    // these results should have the offereds included
+    let assessments = JSON.parse(results)
+    _.each(assessments, (assessment) => {
+      if (assessment.offereds.length > 0) {
         assessment.startTime = assessment.offereds[0].startTime
         assessment.deadline = assessment.offereds[0].deadline
         assessment.assessmentOfferedId = assessment.offereds[0].id
-      })
-      return res.send(assessments);             // this line sends back the response to the client
+      } else {
+        console.log("found an assessment with offereds -- error??")
+        console.log(assessment)
+        assessment.startTime = {}
+        assessment.deadline = {}
+        assessment.assessmentOfferedId = null
+      }
     })
-    .catch( function(err) {
-      //console.log(err)
-      return res.status(err.statusCode).send(err.message);
-    });
-  }
+    return res.send(assessments);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    //console.log(err)
+    return res.status(err.statusCode).send(err.message);
+  });
 }
 
 function hasBasicAuthz(req, res) {
@@ -861,25 +865,21 @@ function addSharedMission(req, res) {
   // It creates the mission in a child bank of
   //   genusTypeId: "assessment-bank-genus%3Afbw-shared-missions%40ODL.MIT.EDU"
   let assessment = {}
-  let sharedBankId
-  Q.when(getSharedBankId(req.params.bankId))
-  .then( function (bankId) {
-    sharedBankId = bankId
-    let assessmentOptions = {
-      data: req.body,
-      method: 'POST',
-      path: `assessment/banks/${sharedBankId}/assessments`
-    };
-    console.log('assessmentOptions', assessmentOptions)
-    return qbank(assessmentOptions)
-  })
+  let sharedBankAliasId = sharedBankAlias(req.params.bankId)
+  let assessmentOptions = {
+    data: req.body,
+    method: 'POST',
+    path: `assessment/banks/${sharedBankAliasId}/assessments`
+  };
+  // console.log('assessmentOptions', assessmentOptions)
+  qbank(assessmentOptions)
   .then( function(result) {
     assessment = JSON.parse(result);
     // now create the offered
     let offeredOption = {
       data: req.body,
       method: 'POST',
-      path: `assessment/banks/${sharedBankId}/assessments/${assessment.id}/assessmentsoffered`
+      path: `assessment/banks/${sharedBankAliasId}/assessments/${assessment.id}/assessmentsoffered`
     };
     console.log('offeredOption', offeredOption)
     return qbank(offeredOption);
