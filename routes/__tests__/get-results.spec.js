@@ -175,7 +175,7 @@ describe('Instructor getting results', function() {
     return chai.request(server)
      .delete(`/middleman/banks/${ALGEBRA_BANK_ID}/missions/${missionId}`)
      .then((res) => {
-      //  console.log('res', res.text)
+       console.log('delete res', res.text)
        return JSON.parse(res.text);
      });
   }
@@ -191,8 +191,9 @@ describe('Instructor getting results', function() {
       res.should.have.status(200);
 
       let result = JSON.parse(res.text);
-      let phaseIIs = _.filter(result, result => result.displayName.text.indexOf('Phase II for Internal test mission') > -1);
-      console.log('phaseIIs', phaseIIs);
+      // console.log('all missions', result)
+      let phaseIIs = _.filter(result, result => result.displayName.text.indexOf('Phase II for Internal') > -1);
+      console.log('phaseIIs to be deleted', phaseIIs);
 
       return Q.all(_.map(phaseIIs, mission => deleteMissionAsync(mission.id)))
     })
