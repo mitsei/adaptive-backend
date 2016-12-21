@@ -865,25 +865,21 @@ function addSharedMission(req, res) {
   // It creates the mission in a child bank of
   //   genusTypeId: "assessment-bank-genus%3Afbw-shared-missions%40ODL.MIT.EDU"
   let assessment = {}
-  let sharedBankId
-  Q.when(getSharedBankId(req.params.bankId))
-  .then( function (bankId) {
-    sharedBankId = bankId
-    let assessmentOptions = {
-      data: req.body,
-      method: 'POST',
-      path: `assessment/banks/${sharedBankId}/assessments`
-    };
-    // console.log('assessmentOptions', assessmentOptions)
-    return qbank(assessmentOptions)
-  })
+  let sharedBankAliasId = sharedBankAlias(req.params.bankId)
+  let assessmentOptions = {
+    data: req.body,
+    method: 'POST',
+    path: `assessment/banks/${sharedBankAliasId}/assessments`
+  };
+  // console.log('assessmentOptions', assessmentOptions)
+  qbank(assessmentOptions)
   .then( function(result) {
     assessment = JSON.parse(result);
     // now create the offered
     let offeredOption = {
       data: req.body,
       method: 'POST',
-      path: `assessment/banks/${sharedBankId}/assessments/${assessment.id}/assessmentsoffered`
+      path: `assessment/banks/${sharedBankAliasId}/assessments/${assessment.id}/assessmentsoffered`
     };
     // console.log('offeredOption', offeredOption)
     return qbank(offeredOption);
@@ -897,7 +893,7 @@ function addSharedMission(req, res) {
     return res.send(assessment);             // this line sends back the response to the client
   })
   .catch( function(err) {
-    // console.log(err)
+    console.log(err)
     return res.status(err.statusCode).send(err.message);
   });
 }
