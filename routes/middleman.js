@@ -870,7 +870,7 @@ function addSharedMission(req, res) {
       method: 'POST',
       path: `assessment/banks/${sharedBankId}/assessments`
     };
-    // console.log('assessmentOptions', assessmentOptions)
+    console.log('assessmentOptions', assessmentOptions)
     return qbank(assessmentOptions)
   })
   .then( function(result) {
@@ -881,7 +881,7 @@ function addSharedMission(req, res) {
       method: 'POST',
       path: `assessment/banks/${sharedBankId}/assessments/${assessment.id}/assessmentsoffered`
     };
-    // console.log('offeredOption', offeredOption)
+    console.log('offeredOption', offeredOption)
     return qbank(offeredOption);
   })
   .then( (result) => {
@@ -893,7 +893,7 @@ function addSharedMission(req, res) {
     return res.send(assessment);             // this line sends back the response to the client
   })
   .catch( function(err) {
-    // console.log(err)
+    console.log(err)
     return res.status(err.statusCode).send(err.message);
   });
 }

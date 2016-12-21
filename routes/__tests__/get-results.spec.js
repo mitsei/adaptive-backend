@@ -25,6 +25,13 @@ const SECTION_ID = "assessment.AssessmentSection%3A5855518171e4823bce25aa7f%40ba
 const STUDENT_ID = 'LUWEEZY@acc.edu'
 const INSTRUCTOR_ID = 'I5055010092@acc.edu'
 
+const STUDENTS = [
+  {
+    agentId:                
+    takenId:
+  }
+]
+
 describe('Instructor getting results', function() {
 
   it(`should get results on the Internal Test Mission (Phase I)`, done => {
@@ -40,7 +47,16 @@ describe('Instructor getting results', function() {
    });
   });
 
-  it (`should create Phase II missions for students `, done => {
+  it (`should create Phase II missions for the Internal Test Mission `, done => {
+    let phaseIIMissions = _.map(STUDENTS, )
+    let params = {
+        data: phaseIIMissions,
+        url: `/middleman/banks/${bankId}/personalmissions`,
+        method: 'POST'
+    };
+
+
+
 
   });
 
