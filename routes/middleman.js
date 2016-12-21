@@ -731,6 +731,7 @@ function getMissions(req, res) {
     qbank(assessmentOptions)
     .then( function(results) {
       let assessments = JSON.parse(results)
+
       _.each(assessments, (assessment) => {
         assessment.startTime = assessment.offereds[0].startTime
         assessment.deadline = assessment.offereds[0].deadline
@@ -749,12 +750,16 @@ function getMissions(req, res) {
       path: `assessment/banks/${privateBankAlias(req.params.bankId, 'instructor')}/assessments?isolated&withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
     }
   }
+
   console.log('assessmentOptions', assessmentOptions)
   // do this async-ly
   qbank(assessmentOptions)
   .then( function(results) {
     // these results should have the offereds included
     let assessments = JSON.parse(results)
+
+    console.log('assessments', assessments)
+
     _.each(assessments, (assessment) => {
       if (assessment.offereds.length > 0) {
         assessment.startTime = assessment.offereds[0].startTime
@@ -771,7 +776,7 @@ function getMissions(req, res) {
     return res.send(assessments);             // this line sends back the response to the client
   })
   .catch( function(err) {
-    //console.log(err)
+    console.log(err)
     return res.status(err.statusCode).send(err.message);
   });
 }
@@ -881,7 +886,7 @@ function addSharedMission(req, res) {
       method: 'POST',
       path: `assessment/banks/${sharedBankAliasId}/assessments/${assessment.id}/assessmentsoffered`
     };
-    console.log('offeredOption', offeredOption)
+    // console.log('offeredOption', offeredOption)
     return qbank(offeredOption);
   })
   .then( (result) => {

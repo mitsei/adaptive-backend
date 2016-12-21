@@ -14,6 +14,10 @@ function momentToQBank(momentObject) {
   }
 }
 
+function parseUsername(username) {
+  return username.split('@')[0];
+}
+
 const ALGEBRA_BANK_ID = 'assessment.Bank%3A576d6d3271e4828c441d721a%40bazzim.MIT.EDU';
 const ACCOUNTING_BANK_ID = 'assessment.Bank%3A57d70ed471e482a74879349a%40bazzim.MIT.EDU';
 
@@ -50,7 +54,7 @@ module.exports = {
     } else if (type === 'phaseII') {
       missionParams.username = missionData.student.agentId;
       missionParams.sourceAssessmentTakenId = missionData.student.takenId,
-      missionParams.name = missionData.displayName;
+      missionParams.name = `${parseUsername(missionData.student.agentId)}'s Phase II for ${missionData.displayName}`,
 
       missionParams.genusTypeId = "assessment-genus%3Afbw-in-class-mission%40ODL.MIT.EDU";
       missionParams.recordTypeIds = ["assessment-record-type%3Afbw-phase-ii%40ODL.MIT.EDU"];

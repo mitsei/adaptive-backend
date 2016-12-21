@@ -11,7 +11,7 @@ const server = require('../../index');
 const should = chai.should();
 const _ = require('lodash')
 const Q = require('q')
-// const utils = require('')
+const utilities = require('./utilities')
 
 chai.use(chaiHttp);
 
@@ -27,10 +27,87 @@ const INSTRUCTOR_ID = 'I5055010092@acc.edu'
 
 const STUDENTS = [
   {
-    agentId:                
-    takenId:
+    agentId: 'LUWEEZY@acc.edu',
+    takenId: 'a random string'
+  },
+  {
+    agentId: 'DARTH_VADER@acc.edu',
+    takenId: 'a random string'
+  },
+  {
+    agentId: 'YODA@acc.edu',
+    takenId: 'a random string'
+  },
+  {
+    agentId: 'DAX@acc.edu',
+    takenId: 'a random string'
+  },
+  {
+    agentId: 'JANEWAY@acc.edu',
+    takenId: 'a random string'
+  },
+  {
+    agentId: 'PICARD@acc.edu',
+    takenId: 'a random string'
+  },
+  {
+    agentId: 'SPOCK@acc.edu',
+    takenId: 'a random string'
+  },
+  {
+    agentId: 'WORF@acc.edu',
+    takenId: 'a random string'
+  },
+  {
+    agentId: 'DATA@acc.edu',
+    takenId: 'a random string'
+  },
+  {
+    agentId: 'TUVOK@acc.edu',
+    takenId: 'a random string'
+  },
+];
+
+const directives = [
+  {
+    id: 'mc3-objective%3A15206%40MIT-OEIT'    // add/subtract/multiply 2 functions
+  },
+  {
+    id: 'mc3-objective%3A15143%40MIT-OEIT'    // decompose a function
+  },
+  {
+    id: 'mc3-objective%3A14229%40MIT-OEIT'    // find center and radius of circle
+  },
+  {
+    id: 'mc3-objective%3A15027%40MIT-OEIT',   // find midpoint of segement
+  },
+  {
+    id: 'mc3-objective%3A15119%40MIT-OEIT'  // find the zero of linear funciton
+  },
+  {
+    id: 'mc3-objective%3A15115%40MIT-OEIT'    // solve linear equ
+  },
+  {
+    id: 'mc3-objective%3A15058%40MIT-OEIT'    // find eqn of line given two points
+  },
+  {
+    id: 'mc3-objective%3A14239%40MIT-OEIT'      // find the equation of line from its graph
   }
-]
+];
+
+const directivesItemsMap = {
+  'mc3-objective%3A15059%40MIT-OEIT': 6,
+  'mc3-objective%3A15062%40MIT-OEIT': 6,
+  'mc3-objective%3A15206%40MIT-OEIT': 6,
+  'mc3-objective%3A15143%40MIT-OEIT': 3,
+  'mc3-objective%3A14229%40MIT-OEIT': 6,
+  'mc3-objective%3A15027%40MIT-OEIT': 6,
+  'mc3-objective%3A15119%40MIT-OEIT': 6,
+  'mc3-objective%3A15115%40MIT-OEIT': 6,
+  'mc3-objective%3A15058%40MIT-OEIT': 6,
+  'mc3-objective%3A14239%40MIT-OEIT': 6,
+}
+
 
 describe('Instructor getting results', function() {
 
@@ -48,22 +125,34 @@ describe('Instructor getting results', function() {
   });
 
   it (`should create Phase II missions for the Internal Test Mission `, done => {
-    let phaseIIMissions = _.map(STUDENTS, )
-    let params = {
-        data: phaseIIMissions,
-        url: `/middleman/banks/${bankId}/personalmissions`,
-        method: 'POST'
-    };
+    let phaseIIMissions = _.map(STUDENTS, student => {
+      let data = {
+        student,
+        displayName: 'Internal Test mission'
+      };
 
+      // this says that all students listed will get the same directives
+      return utilities.createMission(data, 'phaseII', directives, directivesItemsMap)
+    });
 
+    chai.request(server)
+    .post(`/middleman/banks/${ALGEBRA_BANK_ID}/personalmissions`)
+    .send(phaseIIMissions)
+    .end((err, res) => {
+      res.should.have.status(200);
+      let result = JSON.parse(res.text);
+      result.length.should.be.above(1);        // there's 1 taken just from testing alone + possibly a bunch of others
+      //  console.log(result);
 
+      done();
+    });
 
   });
 
 
-  it(`should get results on non-empty Phase II missions`)
-
-  it(`should get results on empty Phase II missions`)
+  // it(`should get results on non-empty Phase II missions`)
+  //
+  // it(`should get results on empty Phase II missions`)
 
 
 });
