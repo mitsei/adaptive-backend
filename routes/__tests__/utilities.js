@@ -29,7 +29,7 @@ module.exports = {
 
   createMission: function createMission(missionData, type, directives, directivesItemsMap) {
     let missionParams = {
-      displayName: missionData.displayName,
+      //displayName: missionData.displayName,
       startTime: momentToQBank(moment()),
       deadline: momentToQBank(moment().add(30, 'days')),
       sections: _.map(directives, (directive) => {

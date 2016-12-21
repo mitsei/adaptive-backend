@@ -22,48 +22,48 @@ const ASSIGNED_BANK_ID = "assessment.Bank%3A581a39cd71e4822fa62c96cd%40bazzim.MI
 const OFFERED_ID = "assessment.AssessmentOffered%3A5855473871e4823bce25a7fd%40bazzim.MIT.EDU";    // the internal test mission
 const SECTION_ID = "assessment.AssessmentSection%3A5855518171e4823bce25aa7f%40bazzim.MIT.EDU";    // the first directive: if two lines are parallel
 
-const STUDENT_ID = 'LUWEEZY@acc.edu'
-const INSTRUCTOR_ID = 'I5055010092@acc.edu'
+const STUDENT_ID = 'LUWEEZY@fbw-visitor.edu'
+const INSTRUCTOR_ID = 'I5055010092@fbw-visitor.edu'
 
 const STUDENTS = [
   {
-    agentId: 'LUWEEZY@acc.edu',
+    agentId: 'LUWEEZY@fbw-visitor.edu',
     takenId: 'a random string'
   },
   {
-    agentId: 'DARTH_VADER@acc.edu',
+    agentId: 'DARTH_VADER@fbw-visitor.edu',
     takenId: 'a random string'
   },
   {
-    agentId: 'YODA@acc.edu',
+    agentId: 'YODA@fbw-visitor.edu',
     takenId: 'a random string'
   },
   {
-    agentId: 'DAX@acc.edu',
+    agentId: 'DAX@fbw-visitor.edu',
     takenId: 'a random string'
   },
   {
-    agentId: 'JANEWAY@acc.edu',
+    agentId: 'JANEWAY@fbw-visitor.edu',
     takenId: 'a random string'
   },
   {
-    agentId: 'PICARD@acc.edu',
+    agentId: 'PICARD@fbw-visitor.edu',
     takenId: 'a random string'
   },
   {
-    agentId: 'SPOCK@acc.edu',
+    agentId: 'SPOCK@fbw-visitor.edu',
     takenId: 'a random string'
   },
   {
-    agentId: 'WORF@acc.edu',
+    agentId: 'WORF@fbw-visitor.edu',
     takenId: 'a random string'
   },
   {
-    agentId: 'DATA@acc.edu',
+    agentId: 'DATA@fbw-visitor.edu',
     takenId: 'a random string'
   },
   {
-    agentId: 'TUVOK@acc.edu',
+    agentId: 'TUVOK@fbw-visitor.edu',
     takenId: 'a random string'
   },
 ];
