@@ -974,7 +974,7 @@ function addPersonalizedMission(req, res) {
     _.each(allPrivateBankIds, function (privateBankId, index) {
       let assessmentData = req.body[index]
       let assessmentOptions = _.assign({}, assessmentData, {
-        assessmentOffereds: [{
+        assessmentsOffered: [{
           startTime: assessmentData.startTime,
           deadline: assessmentData.deadline
         }],

@@ -126,30 +126,30 @@ describe('Instructor getting results', function() {
    });
   });
 
-  // it (`should create Phase II missions for the Internal Test Mission `, done => {
-  //   let phaseIIMissions = _.map(STUDENTS, student => {
-  //     let data = {
-  //       student,
-  //       displayName: 'Internal Test mission'
-  //     };
-  //
-  //     // this says that all students listed will get the same directives
-  //     return utilities.createMission(data, 'phaseII', directives, directivesItemsMap)
-  //   });
-  //
-  //   chai.request(server)
-  //   .post(`/middleman/banks/${ALGEBRA_BANK_ID}/personalmissions`)
-  //   .send(phaseIIMissions)
-  //   .end((err, res) => {
-  //     res.should.have.status(200);
-  //
-  //     let result = JSON.parse(res.text);
-  //     result.length.should.be.eql(STUDENTS.length);
-  //     // console.log('result', result);
-  //
-  //     done();
-  //   });
-  // });
+  it (`should create Phase II missions for the Internal Test Mission `, done => {
+    let phaseIIMissions = _.map(STUDENTS, student => {
+      let data = {
+        student,
+        displayName: 'Internal Test mission'
+      };
+
+      // this says that all students listed will get the same directives
+      return utilities.createMission(data, 'phaseII', directives, directivesItemsMap)
+    });
+
+    chai.request(server)
+    .post(`/middleman/banks/${ALGEBRA_BANK_ID}/personalmissions`)
+    .send(phaseIIMissions)
+    .end((err, res) => {
+      res.should.have.status(200);
+
+      let result = JSON.parse(res.text);
+      result.length.should.be.eql(STUDENTS.length);
+      // console.log('result', result);
+
+      done();
+    });
+  });
 
 
   it(`should verify that SPOCK can get the offered id and take the Phase II mission`, done => {
