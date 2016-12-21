@@ -719,29 +719,14 @@ function getMissions(req, res) {
   // For instructors without username, the passed-in bank is the
   //   termBankId. Calculate the sharedBankId.
   let username = getUsername(req)
+  let assessmentOptions
   if (username) {
-    let assessmentOptions = {
+    assessmentOptions = {
       path: `assessment/banks/${privateBankAlias(req.params.bankId, username)}/assessments?raw&withOffereds`
     }
     // we don't actually need to set the proxy here, because
     // students can't see assessments in authz -- so still needs
     // to be FbW user. Just need a different filter.
-
-    // do this async-ly
-    qbank(assessmentOptions)
-    .then( function(results) {
-      let assessments = JSON.parse(results)
-      _.each(assessments, (assessment) => {
-        assessment.startTime = assessment.offereds[0].startTime
-        assessment.deadline = assessment.offereds[0].deadline
-        assessment.assessmentOfferedId = assessment.offereds[0].id
-      })
-      return res.send(assessments);        // this line sends back the response to the client
-    })
-    .catch( function(err) {
-      console.log(err)
-      return res.status(err.statusCode).send(err.message);
-    });
   } else {
     // NOTE -- this assumes the privateBankAlias has already been set for instructor
     // removing "sections" because I don't think we need that flag here
@@ -761,7 +746,7 @@ function getMissions(req, res) {
         assessment.deadline = assessment.offereds[0].deadline
         assessment.assessmentOfferedId = assessment.offereds[0].id
       } else {
-        console.log("found an assessment with offereds -- error??")
+        console.log("found an assessment with no offereds -- error??")
         console.log(assessment)
         assessment.startTime = {}
         assessment.deadline = {}
