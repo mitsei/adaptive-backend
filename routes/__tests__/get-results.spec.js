@@ -140,9 +140,9 @@ describe('Instructor getting results', function() {
     .send(phaseIIMissions)
     .end((err, res) => {
       res.should.have.status(200);
+
       let result = JSON.parse(res.text);
-      result.length.should.be.above(1);        // there's 1 taken just from testing alone + possibly a bunch of others
-      //  console.log(result);
+      result.length.should.be.eql(STUDENTS.length);
 
       done();
     });

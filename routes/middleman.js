@@ -736,14 +736,14 @@ function getMissions(req, res) {
     }
   }
 
-  console.log('assessmentOptions', assessmentOptions)
+  // console.log('assessmentOptions', assessmentOptions)
   // do this async-ly
   qbank(assessmentOptions)
   .then( function(results) {
     // these results should have the offereds included
     let assessments = JSON.parse(results)
 
-    console.log('assessments', assessments)
+    // console.log('assessments', assessments)
 
     _.each(assessments, (assessment) => {
       if (assessment.offereds.length > 0) {
@@ -940,12 +940,17 @@ function addPersonalizedMission(req, res) {
     privateBankPromises = [];
   _.each(req.body, function (student) {
     privateBankPromises.push(Q.when(getPrivateBankId(req.params.bankId, student.username)))
-  })
+  });
+
+  // console.log('privateBankPromises', privateBankPromises)
+
   Q.all(privateBankPromises)
   .then( function (privateBankIds) {
     // then link the private banks into the term bank hierarchy so permissions
     // work out...
-    allPrivateBankIds = privateBankIds
+    allPrivateBankIds = privateBankIds;
+    // console.log('allPrivateBankIds', privateBankIds)
+
     return Q.when(linkPrivateBanksIntoTerm(allPrivateBankIds, req.params.bankId))
   })
   .then( function (authzResults) {
@@ -976,10 +981,13 @@ function addPersonalizedMission(req, res) {
         bankId: privateBankId
       })
       createAssessmentsOptions.data.assessments.push(assessmentOptions)
-    })
+    });
+
+    // console.log('createAssessmentsOptions', createAssessmentsOptions)
     return qbank(createAssessmentsOptions)
   })
   .then( (allMissions) => {
+    // console.log('allMissions created', allMissions)
     return res.send(allMissions);             // this line sends back the response to the client
   })
   .catch( function(err) {
