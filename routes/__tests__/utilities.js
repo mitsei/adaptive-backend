@@ -29,7 +29,7 @@ module.exports = {
 
   createMission: function createMission(missionData, type, directives, directivesItemsMap) {
     let missionParams = {
-      //displayName: missionData.displayName,
+      displayName: missionData.displayName,
       startTime: momentToQBank(moment()),
       deadline: momentToQBank(moment().add(30, 'days')),
       sections: _.map(directives, (directive) => {
@@ -54,7 +54,7 @@ module.exports = {
     } else if (type === 'phaseII') {
       missionParams.username = missionData.student.agentId;
       missionParams.sourceAssessmentTakenId = missionData.student.takenId,
-      missionParams.name = `${parseUsername(missionData.student.agentId)}'s Phase II for ${missionData.displayName}`,
+      missionParams.displayName = `${parseUsername(missionData.student.agentId)}'s Phase II for ${missionData.displayName}`,
 
       missionParams.genusTypeId = "assessment-genus%3Afbw-in-class-mission%40ODL.MIT.EDU";
       missionParams.recordTypeIds = ["assessment-record-type%3Afbw-phase-ii%40ODL.MIT.EDU"];
