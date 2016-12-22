@@ -181,7 +181,7 @@ describe('Instructor getting results', function() {
     })
     .then( res => {
       let result = JSON.parse(res.text);
-      console.log('got taken', result);
+      // console.log('got taken', result);
       return result;
     })
 

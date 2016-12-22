@@ -1003,22 +1003,21 @@ function deleteMission(req, res) {
   let getOfferedsOptions = {
     path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}/assessmentsoffered?raw`
   }
+  let offeredIds = []
 
   let deleteOfferedPromises;
   qbank(getOfferedsOptions)
   .then((offeredsRaw) => {
     let offereds = JSON.parse(offeredsRaw);
-
-    // build this array for later use
-    deleteOfferedPromises = _.map(offereds, offered => _deleteOffered(offered.id, req.params.bankId));
-
+    offeredIds = _.map(offereds, 'id')
     // get takens
+    // console.log('got offereds', offereds)
     return Q.all(_.map(offereds, offered => _getTakens(offered.id, req.params.bankId)))
   })
   .then((takenResponses) => {
     // must delete takens first
     let takens = _.flatten(_.map(takenResponses, _.ary(JSON.parse, 1)));
-    
+
     // let deleteTakenPromises = _.compact(_.map(takens, taken => _deleteTaken(taken.id, req.params.bankId)));
     // console.log('deleteTakenPromises', deleteTakenPromises);
 
@@ -1029,6 +1028,8 @@ function deleteMission(req, res) {
   .then((result) => {
     // then delete offereds
     console.log('deleted takens', result);
+
+    deleteOfferedPromises = _.map(offeredIds, offeredId => _deleteOffered(offeredId, req.params.bankId));
 
     return Q.all(deleteOfferedPromises);
   })
