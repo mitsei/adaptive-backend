@@ -151,24 +151,52 @@ describe('Instructor getting results', function() {
     });
   });
 
+  function getOfferedTakenPromise(student) {
+    console.log('getting offered + taken for', student.agentId)
 
-  it(`should verify that SPOCK can get the offered id and take the Phase II mission`, done => {
-    // get the offered id first
-      chai.request(server)
-      .get(`/middleman/banks/${ALGEBRA_BANK_ID}/missions`)
-      .set('x-fbw-username', STUDENTS[6].agentId)
-      .then( (res) => {
-        res.should.have.status(200);
+    return chai.request(server)
+    .get(`/middleman/banks/${ALGEBRA_BANK_ID}/missions`)
+    .set('x-fbw-username', student.agentId)
+    .then( (res) => {
+      res.should.have.status(200);
 
-        let result = JSON.parse(res.text);
-        let phaseIIs = _.filter(result, result => result.displayName.text.indexOf('Phase II for Internal test mission') > -1);
-        console.log('phaseIIs', phaseIIs);
+      let result = JSON.parse(res.text);
+      let phaseIIs = _.filter(result, mission => mission.displayName.text.indexOf('Phase II') > -1);
+      // console.log('all missions', result)
+      // console.log('phaseIIs', phaseIIs);
 
-        phaseIIs.length.should.be.above(0);
+      phaseIIs.length.should.be.eql(1);
+
+      let offereds = phaseIIs[0].offereds;
+      let assignedBankIds = phaseIIs[0].assignedBankIds;
+
+      // console.log('offereds', offereds)
+
+      offereds.length.should.be.eql(1);
+      assignedBankIds.length.should.be.eql(1);
+
+      return chai.request(server)
+       .get(`/middleman/banks/${assignedBankIds[0]}/offereds/${offereds[0].id}/takeMission`)
+       .set('x-fbw-username', student.agentId)
+    })
+    .then( res => {
+      let result = JSON.parse(res.text);
+      console.log('got taken', result);
+      return result;
+    })
+
+  }
 
 
-        done();
-      })
+  it(`should verify that all students can get the offered id and take their own Phase II mission`, done => {
+    this.timeout(20000)
+
+    Q.all(_.map(STUDENTS, getOfferedTakenPromise))
+    .then( res => {
+      console.log('got offereds + takens for all students', res)
+      done();
+    })
+
   })
 
 
@@ -176,35 +204,45 @@ describe('Instructor getting results', function() {
     return chai.request(server)
      .delete(`/middleman/banks/${ALGEBRA_BANK_ID}/missions/${missionId}`)
      .then((res) => {
-      //  console.log('res', res.text)
-       return JSON.parse(res.text);
+      //  console.log('delete res', res.text)
+       return res.text ? JSON.parse(res.text) : null;
      });
   }
 
-  // clean up all the newly-created Phase II missions
-  // after( function(done) {
-  //   this.timeout(20000);
-  //
-  //   chai.request(server)
-  //   .get(`/middleman/banks/${ALGEBRA_BANK_ID}/missions`)
-  //   .set('x-fbw-username', STUDENTS[1].agentId)
-  //   .then( (res) => {
-  //     res.should.have.status(200);
-  //
-  //     let result = JSON.parse(res.text);
-  //     let phaseIIs = _.filter(result, result => result.displayName.text.indexOf('Phase II for Internal test mission') > -1);
-  //     console.log('phaseIIs', phaseIIs);
-  //
-  //     return Q.all(_.map(phaseIIs, mission => deleteMissionAsync(mission.id)))
-  //   })
-  //   .then( res => {
-  //     console.log('res', res)
-  //     done();
-  //   })
-  //   .catch( err => {
-  //     console.log(err)
-  //   });
-  // });
+  function cleanUpPromise(student) {
+    console.log('cleaning up for', student.agentId);
+
+    return chai.request(server)
+    .get(`/middleman/banks/${ALGEBRA_BANK_ID}/missions`)
+    .set('x-fbw-username', student.agentId)
+    .then( (res) => {
+      res.should.have.status(200);
+
+      let result = JSON.parse(res.text);
+      let phaseIIs = _.filter(result, mission => mission.displayName.text.indexOf('Phase II') > -1 || mission.offereds.length == 0);
+      // console.log('all missions', result);
+      // console.log(result[0].displayName);
+
+      console.log('missions to be deleted', _.map(phaseIIs, 'displayName.text'));
+
+      return Q.all(_.map(phaseIIs, mission => deleteMissionAsync(mission.id)))
+    })
+    .then( res => res)
+    .catch( err => err);
+  }
+
+  // clean up all the newly-created Phase II missions and early cruft with no offereds
+  after( function(done) {
+    this.timeout(20000);
+
+    Q.all(_.map(STUDENTS, cleanUpPromise))
+    .then( res => {
+      console.log('cleaned up for all students', res.text);
+
+      done();
+    })
+
+  });
 
 
 

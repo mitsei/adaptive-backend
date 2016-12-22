@@ -9,5 +9,7 @@ module.exports = function _deleteTaken(takenId, bankId) {
     path: `assessment/banks/${bankId}/assessmentstaken/${takenId}`
   }
 
+  // console.log('deleteTakenOptions', deleteTakenOptions)
+
   return qbank(deleteTakenOptions);
 }

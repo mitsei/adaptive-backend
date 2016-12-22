@@ -751,7 +751,7 @@ function getMissions(req, res) {
         assessment.assessmentOfferedId = assessment.offereds[0].id
       } else {
         console.log("found an assessment with no offereds -- error??")
-        console.log(assessment)
+        console.log(assessment.displayName.text, assessment.id)
         assessment.startTime = {}
         assessment.deadline = {}
         assessment.assessmentOfferedId = null
@@ -1017,16 +1017,18 @@ function deleteMission(req, res) {
   })
   .then((takenResponses) => {
     // must delete takens first
-    let takens = _.map(takenResponses, _.ary(JSON.parse, 1));
-    let deleteTakenPromises = _.compact(_.map(takens, taken => _deleteTaken(taken.id, req.params.bankId)));
-    // console.log('takens', takens);
+    let takens = _.flatten(_.map(takenResponses, _.ary(JSON.parse, 1)));
+    
+    // let deleteTakenPromises = _.compact(_.map(takens, taken => _deleteTaken(taken.id, req.params.bankId)));
     // console.log('deleteTakenPromises', deleteTakenPromises);
 
-    return deleteTakenPromises.length > 0 ? Q.all(deleteTakenPromises) : Q.when('no takens');
+    console.log('takens', takens);
+
+    return Q.all(_.map(takens, taken => _deleteTaken(taken.id, req.params.bankId)));
   })
   .then((result) => {
     // then delete offereds
-    // console.log('deleted takens', result);
+    console.log('deleted takens', result);
 
     return Q.all(deleteOfferedPromises);
   })
