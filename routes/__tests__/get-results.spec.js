@@ -182,6 +182,7 @@ describe('Instructor getting results', function() {
     .then( res => {
       let result = JSON.parse(res.text);
       // console.log('got taken', result);
+      result.id.should.be.type('string')
       return result;
     })
 
@@ -189,11 +190,11 @@ describe('Instructor getting results', function() {
 
 
   it(`should verify that all students can get the offered id and take their own Phase II mission`, done => {
-    this.timeout(20000)
+    this.timeout(30000)
 
     Q.all(_.map(STUDENTS, getOfferedTakenPromise))
     .then( res => {
-      console.log('got offereds + takens for all students', res)
+      // console.log('got offereds + takens for all students', res)
       done();
     })
 

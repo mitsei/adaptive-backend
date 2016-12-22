@@ -1021,13 +1021,13 @@ function deleteMission(req, res) {
     // let deleteTakenPromises = _.compact(_.map(takens, taken => _deleteTaken(taken.id, req.params.bankId)));
     // console.log('deleteTakenPromises', deleteTakenPromises);
 
-    console.log('takens', takens);
+    // console.log('takens', takens);
 
     return Q.all(_.map(takens, taken => _deleteTaken(taken.id, req.params.bankId)));
   })
   .then((result) => {
     // then delete offereds
-    console.log('deleted takens', result);
+    // console.log('deleted takens', result);
 
     deleteOfferedPromises = _.map(offeredIds, offeredId => _deleteOffered(offeredId, req.params.bankId));
 
