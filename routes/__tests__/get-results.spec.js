@@ -152,7 +152,7 @@ describe('Instructor getting results', function() {
   });
 
   function getOfferedTakenPromise(student) {
-    console.log('getting offered + taken for', student.agentId)
+    // console.log('getting offered + taken for', student.agentId)
 
     return chai.request(server)
     .get(`/middleman/banks/${ALGEBRA_BANK_ID}/missions`)
@@ -224,7 +224,7 @@ describe('Instructor getting results', function() {
       // console.log('all missions', result);
       // console.log(result[0].displayName);
 
-      console.log('missions to be deleted', _.map(phaseIIs, 'displayName.text'));
+      // console.log('missions to be deleted', _.map(phaseIIs, 'displayName.text'));
 
       return Q.all(_.map(phaseIIs, mission => deleteMissionAsync(mission.id)))
     })
