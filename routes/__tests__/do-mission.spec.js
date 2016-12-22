@@ -55,7 +55,7 @@ describe('student doing a Mission', function() {
 
   it(`should get the questions for ${STUDENT_ID} (an existing student)`, done => {
     chai.request(server)
-   .get(`/middleman/banks/${ASSIGNED_BANK_ID}/sections/${SECTION_ID}/questions`)
+   .get(`/middleman/banks/${PRIVATE_ALGEBRA_BANK_ID}/sections/${SECTION_ID}/questions`)
    .set('x-fbw-username', STUDENT_ID)
    .end((err, res) => {
      res.should.have.status(200);
@@ -76,7 +76,7 @@ describe('student doing a Mission', function() {
 
   it(`should submit a wrong answer on the 3rd Target question for ${STUDENT_ID} `, done => {
     chai.request(server)
-   .post(`/middleman/banks/${ASSIGNED_BANK_ID}/takens/${SECTION_ID}/questions/${WRONG_QUESTION_ID}/submit`)
+   .post(`/middleman/banks/${PRIVATE_ALGEBRA_BANK_ID}/takens/${SECTION_ID}/questions/${WRONG_QUESTION_ID}/submit`)
    .set('x-fbw-username', STUDENT_ID)
    .send({
      choiceIds: [WRONG_CHOICE_ID],
@@ -97,7 +97,7 @@ describe('student doing a Mission', function() {
 
   it(`should submit the correct answer on the 1st Target quesiton for ${STUDENT_ID}`, done => {
     chai.request(server)
-   .post(`/middleman/banks/${ASSIGNED_BANK_ID}/takens/${SECTION_ID}/questions/${CORRECT_QUESTION_ID}/submit`)
+   .post(`/middleman/banks/${PRIVATE_ALGEBRA_BANK_ID}/takens/${SECTION_ID}/questions/${CORRECT_QUESTION_ID}/submit`)
    .set('x-fbw-username', STUDENT_ID)
    .send({
      choiceIds: [CORRECT_CHOICE_ID],
