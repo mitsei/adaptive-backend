@@ -1259,6 +1259,9 @@ function getDepartmentRelationships(req, res) {
 function getUserMission(req, res) {
   // create assessment taken for the given user and get sections
   // user required.
+  // This needs to be the user's privateBankId, for performance.
+  //   In the student app, the components take care of this. For tests,
+  //   need to do it manually.
   let username = getUsername(req),
     takenOptions = {
       path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
@@ -1267,7 +1270,6 @@ function getUserMission(req, res) {
     };
 
     // console.log('username', username, 'takenOptions', takenOptions);
-
   qbank(takenOptions)
   .then( function (taken) {
     taken = JSON.parse(taken)

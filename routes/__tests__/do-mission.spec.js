@@ -19,6 +19,7 @@ const ALGEBRA_BANK_ID = 'assessment.Bank%3A576d6d3271e4828c441d721a%40bazzim.MIT
 const ACCOUNTING_BANK_ID = 'assessment.Bank%3A57d70ed471e482a74879349a%40bazzim.MIT.EDU';
 
 const STUDENT_ID = 'LUWEEZY@fbw-visitor.edu'
+const PRIVATE_ALGEBRA_BANK_ID = 'assessment.Bank%3A5850599e71e4824fcc9d345f%40bazzim.MIT.EDU'
 const ASSIGNED_BANK_ID = "assessment.Bank%3A581a39cd71e4822fa62c96cd%40bazzim.MIT.EDU";
 const OFFERED_ID = "assessment.AssessmentOffered%3A5855473871e4823bce25a7fd%40bazzim.MIT.EDU";    // the internal test mission
 const SECTION_ID = "assessment.AssessmentSection%3A5855518171e4823bce25aa7f%40bazzim.MIT.EDU";    // the first directive: if two lines are parallel
@@ -37,7 +38,7 @@ describe('student doing a Mission', function() {
   // test GET the user's mission, e.g. get a Taken
   it(`should get a taken for ${STUDENT_ID}`, done => {
     chai.request(server)
-   .get(`/middleman/banks/${ASSIGNED_BANK_ID}/offereds/${OFFERED_ID}/takeMission`)
+   .get(`/middleman/banks/${PRIVATE_ALGEBRA_BANK_ID}/offereds/${OFFERED_ID}/takeMission`)
    .set('x-fbw-username', STUDENT_ID)
    .end((err, res) => {
      res.should.have.status(200);
