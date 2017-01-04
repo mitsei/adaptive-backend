@@ -1,0 +1,24 @@
+{
+  "Identifier": "1744153",
+  "Name": "Fly-by-wire MAT121",
+  "Code": "Fly-by-wire MAT121",
+  "IsActive": true,
+  "Path": "\/content\/enforced2012\/1744153-Fly-by-wireMAT121\/",
+  "StartDate": null,
+  "EndDate": null,
+  "CourseTemplate": {
+    "Identifier": "1744152",
+    "Name": "Fly-by-wire MAT121",
+    "Code": "Fly-by-wire MAT121"
+  },
+  "Semester": {
+    "Identifier": "14226",
+    "Name": "Sandbox",
+    "Code": "SB"
+  },
+  "Department": {
+    "Identifier": "6630",
+    "Name": "Sandbox",
+    "Code": "Sandbox"
+  }
+}

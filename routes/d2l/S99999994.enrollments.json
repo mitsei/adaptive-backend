@@ -1,0 +1,38 @@
+{
+  "PagingInfo": {
+    "Bookmark": "1744153",
+    "HasMoreItems": false
+  },
+  "Items": [
+    {
+      "OrgUnit": {
+        "Id": 1744153,
+        "Type": {
+          "Id": 3,
+          "Code": "Course Offering",
+          "Name": "Course Offering"
+        },
+        "Name": "Fly-by-wire MAT121",
+        "Code": "Fly-by-wire MAT121",
+        "HomeUrl": "https:\/\/acc.desire2learn.com\/d2l\/home\/1744153",
+        "ImageUrl": null
+      },
+      "Access": {
+        "IsActive": true,
+        "StartDate": null,
+        "EndDate": null,
+        "CanAccess": true,
+        "ClasslistRoleName": "Instructor",
+        "LISRoles": [
+          "urn:lti:instrole:ims\/lis\/Faculty",
+          "urn:lti:instrole:ims\/lis\/Member",
+          "urn:lti:instrole:ims\/lis\/Instructor",
+          "urn:lti:instrole:ims\/lis\/Staff",
+          "urn:lti:instrole:ims\/lis\/Alumni",
+          "urn:lti:instrole:ims\/lis\/Observer"
+        ]
+      },
+      "PinDate": null
+    }
+  ]
+}

@@ -82,11 +82,12 @@ function getHandcarFamilyId(contentLibraryId) {
 // ==========
 
 function getUsername(request) {
-  if (_.keys(request.headers).indexOf('x-fbw-username') >= 0) {
-    return request.headers['x-fbw-username']
-  } else {
-    return null
+  let username = request.get('x-fbw-username');
+  if (username && username !== 'null' && username !== 'undefined' && username !== 'false') {
+    return username;
   }
+
+  return null;
 }
 
 function addStudentAuthz(bankId, username) {
@@ -717,9 +718,12 @@ function getMissions(req, res) {
   //   be the termBankId. Calculate the privateBankAlias.
   // For instructors without username, the passed-in bank is the
   //   termBankId. Calculate the sharedBankId.
-  let username = getUsername(req)
-  let assessmentOptions
+  let username = getUsername(req);
+
+  let assessmentOptions;
   if (username) {
+    console.log('getMissions username exists', username);
+
     assessmentOptions = {
       path: `assessment/banks/${privateBankAlias(req.params.bankId, username)}/assessments?raw&withOffereds`
     }
