@@ -425,6 +425,10 @@ function setBankAlias (data) {
     })
 }
 
+function privateBankAliasForUser (bankId, username) {
+  return username ? privateBankAlias(bankId, username) : privateBankAlias(bankId, 'instructor')
+}
+
 // so the full path for this endpoint is /middleman/...
 router.post('/authorizations', setAuthorizations);
 router.get('/banks', getBanks);
@@ -723,7 +727,7 @@ function getMissions(req, res) {
   let assessmentOptions;
   if (username) {
     console.log('getMissions username exists', username);
-
+    // console.log('private bank alias', privateBankAlias(req.params.bankId, username))
     assessmentOptions = {
       path: `assessment/banks/${privateBankAlias(req.params.bankId, username)}/assessments?raw&withOffereds`
     }
@@ -1004,6 +1008,8 @@ function deleteMission(req, res) {
   //    calling this endpoint)
   // then delete assessment + offered
 
+  // Keep this as the passed-in bankId (assuming termBankId),
+  //   because otherwise it won't find all the takens to delete
   let getOfferedsOptions = {
     path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}/assessmentsoffered?raw`
   }
@@ -1264,11 +1270,12 @@ function getUserMission(req, res) {
   // create assessment taken for the given user and get sections
   // user required.
   // This needs to be the user's privateBankId, for performance.
-  //   In the student app, the components take care of this. For tests,
-  //   need to do it manually.
+  //   All apps and tests need to send in the termBankId,
+  //   and the middleman will calculate the privateBankAlias here
   let username = getUsername(req),
+    privateBankAliasId = privateBankAliasForUser(req.params.bankId, username),
     takenOptions = {
-      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
+      path: `assessment/banks/${privateBankAliasId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
       method: 'POST',
       proxy: username
     };
@@ -1278,7 +1285,7 @@ function getUserMission(req, res) {
   .then( function (taken) {
     taken = JSON.parse(taken)
     let options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${taken.id}/questions?raw`,
+      path: `assessment/banks/${privateBankAliasId}/assessmentstaken/${taken.id}/questions?raw`,
       proxy: username
     };
     return qbank(options)
@@ -1295,8 +1302,9 @@ function getSectionQuestions(req, res) {
   // get user's questions for a specific section
   // user required.
   let username = getUsername(req),
+    privateBankAliasId = privateBankAliasForUser(req.params.bankId, username),
     takenOptions = {
-      path: `assessment/banks/${req.params.bankId}/assessmentsections/${req.params.sectionId}/questions?raw`,
+      path: `assessment/banks/${privateBankAliasId}/assessmentsections/${req.params.sectionId}/questions?raw`,
       proxy: username
     };
 
@@ -1313,8 +1321,9 @@ function getWorkedSolution(req, res) {
   // Give up on a specific question and get the worked solution
   // Requires authentication header
   let username = getUsername(req),
+    privateBankAliasId = privateBankAliasForUser(req.params.bankId, username),
     options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${req.params.takenId}/questions/${req.params.questionId}/surrender`,
+      path: `assessment/banks/${privateBankAliasId}/assessmentstaken/${req.params.takenId}/questions/${req.params.questionId}/surrender`,
       proxy: username,
       method: 'POST'
     };
@@ -1333,8 +1342,9 @@ function submitAnswer(req, res) {
   // Send student response to the server
   // Requires authentication header
   let username = getUsername(req),
+    privateBankAliasId = privateBankAliasForUser(req.params.bankId, username),
     options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${req.params.takenId}/questions/${req.params.questionId}/submit`,
+      path: `assessment/banks/${privateBankAliasId}/assessmentstaken/${req.params.takenId}/questions/${req.params.questionId}/submit`,
       proxy: username,
       method: 'POST',
       data: req.body
