@@ -176,7 +176,7 @@ describe('Instructor getting results', function() {
       assignedBankIds.length.should.be.eql(1);
 
       return chai.request(server)
-       .get(`/middleman/banks/${assignedBankIds[0]}/offereds/${offereds[0].id}/takeMission`)
+       .get(`/middleman/banks/${ALGEBRA_BANK_ID}/offereds/${offereds[0].id}/takeMission`)
        .set('x-fbw-username', student.agentId)
     })
     .then( res => {
