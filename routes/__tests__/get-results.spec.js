@@ -32,42 +32,42 @@ const STUDENTS = [
     agentId: 'LUWEEZY@fbw-visitor.edu',
     takenId: 'a random string'
   },
-  {
-    agentId: 'DARTH_VADER@fbw-visitor.edu',
-    takenId: 'a random string'
-  },
-  {
-    agentId: 'YODA@fbw-visitor.edu',
-    takenId: 'a random string'
-  },
-  {
-    agentId: 'DAX@fbw-visitor.edu',
-    takenId: 'a random string'
-  },
-  {
-    agentId: 'JANEWAY@fbw-visitor.edu',
-    takenId: 'a random string'
-  },
-  {
-    agentId: 'PICARD@fbw-visitor.edu',
-    takenId: 'a random string'
-  },
-  {
-    agentId: 'SPOCK@fbw-visitor.edu',
-    takenId: 'a random string'
-  },
-  {
-    agentId: 'WORF@fbw-visitor.edu',
-    takenId: 'a random string'
-  },
-  {
-    agentId: 'DATA@fbw-visitor.edu',
-    takenId: 'a random string'
-  },
-  {
-    agentId: 'TUVOK@fbw-visitor.edu',
-    takenId: 'a random string'
-  },
+  // {
+  //   agentId: 'DARTH_VADER@fbw-visitor.edu',
+  //   takenId: 'a random string'
+  // },
+  // {
+  //   agentId: 'YODA@fbw-visitor.edu',
+  //   takenId: 'a random string'
+  // },
+  // {
+  //   agentId: 'DAX@fbw-visitor.edu',
+  //   takenId: 'a random string'
+  // },
+  // {
+  //   agentId: 'JANEWAY@fbw-visitor.edu',
+  //   takenId: 'a random string'
+  // },
+  // {
+  //   agentId: 'PICARD@fbw-visitor.edu',
+  //   takenId: 'a random string'
+  // },
+  // {
+  //   agentId: 'SPOCK@fbw-visitor.edu',
+  //   takenId: 'a random string'
+  // },
+  // {
+  //   agentId: 'WORF@fbw-visitor.edu',
+  //   takenId: 'a random string'
+  // },
+  // {
+  //   agentId: 'DATA@fbw-visitor.edu',
+  //   takenId: 'a random string'
+  // },
+  // {
+  //   agentId: 'TUVOK@fbw-visitor.edu',
+  //   takenId: 'a random string'
+  // },
 ];
 
 const directives = [

@@ -1273,6 +1273,7 @@ function getUserMission(req, res) {
   //   All apps and tests need to send in the termBankId,
   //   and the middleman will calculate the privateBankAlias here
   let username = getUsername(req),
+    // privateBankAliasId = sharedBankAlias(req.params.bankId),
     privateBankAliasId = privateBankAliasForUser(req.params.bankId, username),
     takenOptions = {
       path: `assessment/banks/${privateBankAliasId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
