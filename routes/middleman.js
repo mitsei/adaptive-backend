@@ -630,7 +630,7 @@ function getPhase2Results(req, res) {
   .then( function(takens) {
     // for each taken, query by it
     let time1 = new Date()
-    console.log(time1.getTime())
+    console.log('time1', time1.getTime())
     takens = JSON.parse(takens)
     let takenIds = _.map(takens, 'id'),
     phase2Options = {
@@ -644,6 +644,7 @@ function getPhase2Results(req, res) {
   })
   .then( function (assessments) {
     let time2 = new Date()
+    console.log('time2', time2.getTime())
     let offeredOptions = {
       data: {
         raw: true,
@@ -659,7 +660,7 @@ function getPhase2Results(req, res) {
   })
   .then( function (offereds) {
     let time3 = new Date()
-    console.log(time3.getTime())
+    console.log('time3', time3.getTime())
     let resultsOptions = {
       data: {
         raw: true,
@@ -675,7 +676,7 @@ function getPhase2Results(req, res) {
   })
   .then( function (results) {
     let time4 = new Date()
-    console.log(time4.getTime())
+    console.log('time4', time4.getTime())
     return res.send(results);             // this line sends back the response to the client
   })
   .catch( function(err) {
