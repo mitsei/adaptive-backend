@@ -600,7 +600,7 @@ function getMissionResults(req, res) {
     }
   } else {
     options = {
-      path: `assessment/banks/${privateBankAlias(req.params.bankId, 'instructor')}/assessmentsoffered/${req.params.offeredId}/results?raw`
+      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?raw`
     }
   }
 
