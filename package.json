@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "test": "./node_modules/.bin/mocha --timeout 10000 --compilers js:babel-core/register --colors $(find . ! -path './node_modules/*' -name '*.spec.js')"
+    "test": "./node_modules/.bin/mocha --timeout 30000 --compilers js:babel-core/register --colors $(find . ! -path './node_modules/*' -name '*.spec.js')"
   },
   "engines": {
     "node": "6.1.0"
