@@ -425,6 +425,10 @@ function setBankAlias (data) {
     })
 }
 
+function privateBankAliasForUser (bankId, username) {
+  return username ? privateBankAlias(bankId, username) : privateBankAlias(bankId, 'instructor')
+}
+
 // so the full path for this endpoint is /middleman/...
 router.post('/authorizations', setAuthorizations);
 router.get('/banks', getBanks);
@@ -596,7 +600,7 @@ function getMissionResults(req, res) {
     }
   } else {
     options = {
-      path: `assessment/banks/${privateBankAlias(req.params.bankId, 'instructor')}/assessmentsoffered/${req.params.offeredId}/results?raw`
+      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/results?raw`
     }
   }
 
@@ -626,7 +630,7 @@ function getPhase2Results(req, res) {
   .then( function(takens) {
     // for each taken, query by it
     let time1 = new Date()
-    console.log(time1.getTime())
+    console.log('time1', time1.getTime())
     takens = JSON.parse(takens)
     let takenIds = _.map(takens, 'id'),
     phase2Options = {
@@ -640,6 +644,7 @@ function getPhase2Results(req, res) {
   })
   .then( function (assessments) {
     let time2 = new Date()
+    console.log('time2', time2.getTime())
     let offeredOptions = {
       data: {
         raw: true,
@@ -655,7 +660,7 @@ function getPhase2Results(req, res) {
   })
   .then( function (offereds) {
     let time3 = new Date()
-    console.log(time3.getTime())
+    console.log('time3', time3.getTime())
     let resultsOptions = {
       data: {
         raw: true,
@@ -671,7 +676,7 @@ function getPhase2Results(req, res) {
   })
   .then( function (results) {
     let time4 = new Date()
-    console.log(time4.getTime())
+    console.log('time4', time4.getTime())
     return res.send(results);             // this line sends back the response to the client
   })
   .catch( function(err) {
@@ -723,7 +728,7 @@ function getMissions(req, res) {
   let assessmentOptions;
   if (username) {
     console.log('getMissions username exists', username);
-
+    // console.log('private bank alias', privateBankAlias(req.params.bankId, username))
     assessmentOptions = {
       path: `assessment/banks/${privateBankAlias(req.params.bankId, username)}/assessments?raw&withOffereds`
     }
@@ -1266,11 +1271,13 @@ function getUserMission(req, res) {
   // create assessment taken for the given user and get sections
   // user required.
   // This needs to be the user's privateBankId, for performance.
-  //   In the student app, the components take care of this. For tests,
-  //   need to do it manually.
+  //   All apps and tests need to send in the termBankId,
+  //   and the middleman will calculate the privateBankAlias here
   let username = getUsername(req),
+    // privateBankAliasId = sharedBankAlias(req.params.bankId),
+    privateBankAliasId = privateBankAliasForUser(req.params.bankId, username),
     takenOptions = {
-      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
+      path: `assessment/banks/${privateBankAliasId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken`,
       method: 'POST',
       proxy: username
     };
@@ -1280,7 +1287,7 @@ function getUserMission(req, res) {
   .then( function (taken) {
     taken = JSON.parse(taken)
     let options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${taken.id}/questions?raw`,
+      path: `assessment/banks/${privateBankAliasId}/assessmentstaken/${taken.id}/questions?raw`,
       proxy: username
     };
     return qbank(options)
@@ -1297,8 +1304,9 @@ function getSectionQuestions(req, res) {
   // get user's questions for a specific section
   // user required.
   let username = getUsername(req),
+    privateBankAliasId = privateBankAliasForUser(req.params.bankId, username),
     takenOptions = {
-      path: `assessment/banks/${req.params.bankId}/assessmentsections/${req.params.sectionId}/questions?raw`,
+      path: `assessment/banks/${privateBankAliasId}/assessmentsections/${req.params.sectionId}/questions?raw`,
       proxy: username
     };
 
@@ -1315,8 +1323,9 @@ function getWorkedSolution(req, res) {
   // Give up on a specific question and get the worked solution
   // Requires authentication header
   let username = getUsername(req),
+    privateBankAliasId = privateBankAliasForUser(req.params.bankId, username),
     options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${req.params.takenId}/questions/${req.params.questionId}/surrender`,
+      path: `assessment/banks/${privateBankAliasId}/assessmentstaken/${req.params.takenId}/questions/${req.params.questionId}/surrender`,
       proxy: username,
       method: 'POST'
     };
@@ -1335,8 +1344,9 @@ function submitAnswer(req, res) {
   // Send student response to the server
   // Requires authentication header
   let username = getUsername(req),
+    privateBankAliasId = privateBankAliasForUser(req.params.bankId, username),
     options = {
-      path: `assessment/banks/${req.params.bankId}/assessmentstaken/${req.params.takenId}/questions/${req.params.questionId}/submit`,
+      path: `assessment/banks/${privateBankAliasId}/assessmentstaken/${req.params.takenId}/questions/${req.params.questionId}/submit`,
       proxy: username,
       method: 'POST',
       data: req.body

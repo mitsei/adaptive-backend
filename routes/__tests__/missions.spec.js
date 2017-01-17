@@ -82,7 +82,7 @@ describe('Missions', function() {
    .end((err, res) => {
      let result = JSON.parse(res.text);
     //  console.log(result);
-     (result).length.should.eql(5);
+     (result).length.should.eql(6);
 
     //  _.forEach(result, mission => {
     //    mission.startTime.should.have('number');
