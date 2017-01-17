@@ -1004,6 +1004,8 @@ function deleteMission(req, res) {
   //    calling this endpoint)
   // then delete assessment + offered
 
+  // Keep this as the passed-in bankId (assuming termBankId),
+  //   because otherwise it won't find all the takens to delete
   let getOfferedsOptions = {
     path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}/assessmentsoffered?raw`
   }
