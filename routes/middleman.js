@@ -623,60 +623,15 @@ function getPhase2Results(req, res) {
   //   offered and then results for that offered
   // Returns an aggregated list, as getMissionResults does
   let options = {
-    path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/assessmentstaken?raw`
+    path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}/spawnedresults?raw`
   }
   // do this async-ly
+  let time1 = new Date()
+  console.log('time1', time1.getTime())
   qbank(options)
-  .then( function(takens) {
-    // for each taken, query by it
-    let time1 = new Date()
-    console.log('time1', time1.getTime())
-    takens = JSON.parse(takens)
-    let takenIds = _.map(takens, 'id'),
-    phase2Options = {
-      data: {
-        sourceAssessmentTakenId: takenIds,
-        raw: true
-      },
-      path: `assessment/banks/${req.params.bankId}/assessments`
-    }
-    return qbank(phase2Options)
-  })
-  .then( function (assessments) {
+  .then( function (results) {
     let time2 = new Date()
     console.log('time2', time2.getTime())
-    let offeredOptions = {
-      data: {
-        raw: true,
-        assessmentIds: _.map(JSON.parse(assessments), 'id')
-      },
-      path: `assessment/banks/${req.params.bankId}/bulkassessmentsoffered`
-    }
-    if (offeredOptions.data.assessmentIds.length === 0) {
-      return Q.when('[]')
-    } else {
-      return qbank(offeredOptions)
-    }
-  })
-  .then( function (offereds) {
-    let time3 = new Date()
-    console.log('time3', time3.getTime())
-    let resultsOptions = {
-      data: {
-        raw: true,
-        assessmentOfferedIds: _.map(JSON.parse(offereds), 'id')
-      },
-      path: `assessment/banks/${req.params.bankId}/bulkofferedresults`
-    }
-    if (resultsOptions.data.assessmentOfferedIds.length === 0) {
-      return Q.when('[]')
-    } else {
-      return qbank(resultsOptions)
-    }
-  })
-  .then( function (results) {
-    let time4 = new Date()
-    console.log('time4', time4.getTime())
     return res.send(results);             // this line sends back the response to the client
   })
   .catch( function(err) {
