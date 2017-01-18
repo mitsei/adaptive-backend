@@ -17,6 +17,8 @@ const mockStudentResponses = {
   }
 }
 
+const mockClassList = require('./mockClassList.json')
+
 /* ====
   This module provides a mock endpoint that substitutes for the call to d2l.
 ===== */
@@ -27,6 +29,7 @@ const mockStudentResponses = {
 router.get('/d2l/api/lp/1.14/enrollments/myenrollments*', getEnrollments)
 router.get('/d2l/api/lp/1.5/courses*', getCourses)
 router.get('/d2l/api/lp/1.5/users/whoami*', getWhoami)
+router.get('/d2l/api/le/1.5/:orgUnitId/classlist/', getClassList);
 
 /*
   expects a required field in req.body of ?mock-role=[student or instructor]
@@ -62,7 +65,7 @@ function getCourses(req, res) {
     return res.send(mockInstructorResponses[sNumber].courses);
 
   } else {
-    return res.status(400).send("must send in body the role of 'student' or 'instructor'");
+    return res.status(400).send("must send in query the role of 'student' or 'instructor'");
   }
 }
 
@@ -80,7 +83,18 @@ function getWhoami(req, res) {
     return res.send(mockInstructorResponses[sNumber].whoami);
 
   } else {
-    return res.status(400).send("must send in body the role of 'student' or 'instructor'");
+    return res.status(400).send("must send in query the role of 'student' or 'instructor'");
+  }
+}
+
+function getClassList(req, res) {
+  let role = _parseRole(req);
+
+  if (role === 'instructor') {
+    return res.send(mockClassList);
+
+  } else {
+    return res.status(401).send('Only a query with role=instructor is allowed to see the classlist')
   }
 }
 
