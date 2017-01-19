@@ -392,12 +392,15 @@ function setBankAlias (data) {
       // Otherwise, create both bank and term.
       return getOrCreateChildNode(data.bankId, data.departmentName, DEPARTMENT_GENUS)
       .then((departmentData) => {
+        console.log('departmentData', departmentData)
         return getOrCreateChildNode(departmentData.id, data.subjectName, SUBJECT_GENUS);
       })
       .then((subjectData) => {
+        console.log('subjectData', subjectData)
         return getOrCreateChildNode(subjectData.id, data.subjectName, TERM_GENUS, data.termName);
       })
       .then((termData) => {
+        console.log('termData', termData)
         newTerm = termData;
         return aliasTerm(termData.id, data.aliasId);
       })
