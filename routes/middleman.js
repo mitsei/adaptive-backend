@@ -429,6 +429,7 @@ router.post('/banks', createBank);
 router.get('/banks/:bankId', getBankDetails);
 router.put('/banks/:bankId', editBankDetails);
 router.delete('/banks/:bankId', deleteBank);
+router.get('/banks/:bankId/children', getBankChildren);
 router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
 router.get('/banks/:bankId/hasbasicauthz', hasBasicAuthz);
@@ -531,11 +532,9 @@ function deleteBank(req, res) {
     path: `assessment/hierarchies/nodes/${req.params.bankId}/parents`
   }
   // Todo: clean this up on the server-side to also have ?raw flag
-  console.log('options', options)
   qbank(options)
   .then((parents) => {
     let originalParents = JSON.parse(parents).data.results
-    console.log('originalParents', originalParents)
     if (originalParents.length > 0) {
       let removeFromHierarchyOptions = {
         method: 'DELETE',
@@ -544,7 +543,6 @@ function deleteBank(req, res) {
         },
         path: `assessment/hierarchies/nodes/${req.params.bankId}/parents`
       }
-      console.log('delete parents', removeFromHierarchyOptions)
       return qbank(removeFromHierarchyOptions)
     } else {
       return Q.when('')
@@ -567,6 +565,22 @@ function deleteBank(req, res) {
     return qbank(deleteOptions)
   })
   .then((result) => {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function getBankChildren(req, res) {
+  // Gets you the children from the hierarchy service
+  let options = {
+    path: `assessment/hierarchies/nodes/${req.params.bankId}/children`
+  };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
     return res.send(result);             // this line sends back the response to the client
   })
   .catch( function(err) {
@@ -1159,8 +1173,9 @@ function setAuthorizations(req, res) {
 function deleteAuthorizations(req, res) {
   // bulk-delete the authorizations
   let username = getUsername(req)
+  let options
   if (username) {
-    let options = {
+    options = {
       method: 'DELETE',
       path: `authorization/authorizations?agentId=${username}`
     };
