@@ -540,7 +540,7 @@ function deleteBank(req, res) {
       let removeFromHierarchyOptions = {
         method: 'DELETE',
         data: {
-          ids: _.map(JSON.parse(parents), 'id')
+          ids: _.map(originalParents, 'id')
         },
         path: `assessment/hierarchies/nodes/${req.params.bankId}/parents`
       }
