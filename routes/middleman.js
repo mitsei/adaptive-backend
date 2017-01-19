@@ -789,28 +789,20 @@ function getMissions(req, res) {
 
 function hasBasicAuthz(req, res) {
   // do authz check on basic QBank access
-  // Changed from canTakeMissions authz check because
-  //   of the way we're handling Phase II missions now,
-  //   students don't have blanket access to take for
-  //   an entire school.
   let username = getUsername(req)
   let options = {
-      path: `assessment/banks/${req.params.bankId}`
+      path: `authorization/authorizations?agentId=${username}&qualifierId=${req.params.bankId}`
     }
 
-  // need to get the original bankId, because for some reason
-  // server-side, the authz doesn't work properly for aliased ids?
   qbank(options)
-  .then( function (originalBank) {
-    bank = JSON.parse(originalBank)
-    let bankOptions = {
-      path: `assessment/banks/${bank.id}`,
-      proxy: username
+  .then( function (authz) {
+    let numAuthz = JSON.parse(authz).data.count
+
+    if (numAuthz > 0) {
+      return res.send(result)
+    } else {
+      return res.status(403).send('');
     }
-    return qbank(options)
-  })
-  .then( function(result) {
-    return res.send(result)
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
