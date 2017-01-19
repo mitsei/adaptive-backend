@@ -532,9 +532,11 @@ function deleteBank(req, res) {
   }
   // This could be collapsed down to a single PUT, if we add the endpoint
   //   on the server-side to do bulk-replacement
+  console.log('options', options)
   qbank(options)
   .then((parents) => {
     let originalParents = JSON.parse(parents)
+    console.log('originalParents', originalParents)
     if (originalParents.length > 0) {
       let removeFromHierarchyOptions = {
         method: 'DELETE',
