@@ -84,7 +84,7 @@ function getHandcarFamilyId(contentLibraryId) {
 function getUsername(request) {
   let username = request.get('x-fbw-username');
   if (username && username !== 'null' && username !== 'undefined' && username !== 'false') {
-    return username;
+    return "" + username;  // make sure this is a string
   }
 
   return null;
