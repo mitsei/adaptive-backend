@@ -39,6 +39,13 @@ describe('authorization endpoints', function() {
 
       result.length.should.eql(AUTHORIZATIONS.length);
 
+      return chai.request(server)
+      .get(`/middleman/hasbasicauthz`)
+      .set('x-fbw-username', STUDENT_ID)
+    })
+    .then((res) => {
+      res.should.have.status(200)
+
       // set up private bank id so we can get missions as the student
       // and those authorizations are also added in
       return chai.request(server)
@@ -59,7 +66,7 @@ describe('authorization endpoints', function() {
       done();
     })
     .catch((err) => {
-      done()
+      console.log(err)
     });
   });
 
