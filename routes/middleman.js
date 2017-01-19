@@ -546,6 +546,15 @@ function deleteBank(req, res) {
     }
   })
   .then((result) => {
+    // now remove from the children hierarchy too
+    let childrenOptions = {
+      method: 'PUT',
+      data: {ids: []},
+      path: `assessment/hierarchies/nodes/${req.params.bankId}/children`
+    }
+    return qbank(childrenOptions)
+  })
+  .then((result) => {
     let deleteOptions = {
       method: 'DELETE',
       path: `assessment/banks/${req.params.bankId}`
