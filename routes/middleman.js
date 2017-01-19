@@ -432,7 +432,7 @@ router.delete('/banks/:bankId', deleteBank);
 router.get('/banks/:bankId/children', getBankChildren);
 router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
-router.get('/banks/:bankId/hasbasicauthz', hasBasicAuthz);
+router.get('/banks/hasbasicauthz', hasBasicAuthz);
 router.post('/banks/:bankId/missions', addSharedMission);
 router.post('/banks/:bankId/personalmissions', addPersonalizedMission);
 router.get('/banks/:bankId/privatebankid', getPrivateBankIdForUser);
@@ -791,7 +791,7 @@ function hasBasicAuthz(req, res) {
   // do authz check on basic QBank access
   let username = getUsername(req)
   let options = {
-      path: `authorization/authorizations?agentId=${username}&qualifierId=${req.params.bankId}`
+      path: `authorization/authorizations?agentId=${username}`
     }
 
   qbank(options)
