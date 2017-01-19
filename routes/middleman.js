@@ -799,7 +799,7 @@ function hasBasicAuthz(req, res) {
     let numAuthz = JSON.parse(authz).data.count
 
     if (numAuthz > 0) {
-      return res.send(result)
+      return res.send('')
     } else {
       return res.status(403).send('');
     }
