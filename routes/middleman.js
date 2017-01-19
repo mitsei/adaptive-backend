@@ -536,12 +536,12 @@ function deleteBank(req, res) {
   .then((parents) => {
     let originalParents = JSON.parse(parents)
     if (originalParents.length > 0) {
+      let ids = _.map(JSON.parse(parents), (parent) => {
+        return `ids=${parent.id}`
+      }).join('&')
       let removeFromHierarchyOptions = {
         method: 'DELETE',
-        data: {
-          ids: _.map(JSON.parse(parents), 'id')
-        },
-        path: `assessment/hierarchies/nodes/${req.params.bankId}/parents`
+        path: `assessment/hierarchies/nodes/${req.params.bankId}/parents?${ids}`
       }
       return qbank(removeFromHierarchyOptions)
     } else {
