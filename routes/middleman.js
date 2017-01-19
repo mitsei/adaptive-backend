@@ -424,6 +424,7 @@ function privateBankAliasForUser (bankId, username) {
 // so the full path for this endpoint is /middleman/...
 router.delete('/authorizations', deleteAuthorizations);
 router.post('/authorizations', setAuthorizations);
+router.get('/hasbasicauthz', hasBasicAuthz);
 router.get('/banks', getBanks);
 router.post('/banks', createBank);
 router.get('/banks/:bankId', getBankDetails);
@@ -432,7 +433,6 @@ router.delete('/banks/:bankId', deleteBank);
 router.get('/banks/:bankId/children', getBankChildren);
 router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
-router.get('/banks/hasbasicauthz', hasBasicAuthz);
 router.post('/banks/:bankId/missions', addSharedMission);
 router.post('/banks/:bankId/personalmissions', addPersonalizedMission);
 router.get('/banks/:bankId/privatebankid', getPrivateBankIdForUser);
