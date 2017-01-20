@@ -84,7 +84,7 @@ function getHandcarFamilyId(contentLibraryId) {
 function getUsername(request) {
   let username = request.get('x-fbw-username');
   if (username && username !== 'null' && username !== 'undefined' && username !== 'false') {
-    return username;
+    return "" + username;  // make sure this is a string
   }
 
   return null;
@@ -228,25 +228,14 @@ function linkSharedBankToTerm(sharedBankId, termBankId) {
 
 // utility method to get the sharedBankId for CRUD on shared missions...
 function getSharedBankId(bankId) {
-  // first, get the actual bank -- what if bankId is an alias?
-  let getOriginalBankOptions = {
-    path: `assessment/banks/${bankId}`
-  }, sharedBank = {}
-  return qbank(getOriginalBankOptions)
-  .then((result) => {
-    originalBank = JSON.parse(result)
-    let getSharedBankOptions = {
-      path: `assessment/banks/${sharedBankAlias(originalBank.id)}`
-    }
-    return qbank(getSharedBankOptions)
-  })
+  // assume this is passed in as the termBankId
+  let getSharedBankOptions = {
+    path: `assessment/banks/${sharedBankAlias(bankId)}`
+  }
+  let sharedBank
+  return qbank(getSharedBankOptions)
   .then((result) => {
     sharedBank = JSON.parse(result)
-    // let's now make sure the sharedBank is part of the
-    // termBank hierarchy
-    return Q.when(linkSharedBankToTerm(sharedBank.id, bankId))
-  })
-  .then((result) => {
     return Q.when(sharedBank.id)
   })
   .catch((error) => {
@@ -403,12 +392,15 @@ function setBankAlias (data) {
       // Otherwise, create both bank and term.
       return getOrCreateChildNode(data.bankId, data.departmentName, DEPARTMENT_GENUS)
       .then((departmentData) => {
+        console.log('departmentData', departmentData)
         return getOrCreateChildNode(departmentData.id, data.subjectName, SUBJECT_GENUS);
       })
       .then((subjectData) => {
+        console.log('subjectData', subjectData)
         return getOrCreateChildNode(subjectData.id, data.subjectName, TERM_GENUS, data.termName);
       })
       .then((termData) => {
+        console.log('termData', termData)
         newTerm = termData;
         return aliasTerm(termData.id, data.aliasId);
       })
@@ -430,14 +422,17 @@ function privateBankAliasForUser (bankId, username) {
 }
 
 // so the full path for this endpoint is /middleman/...
+router.delete('/authorizations', deleteAuthorizations);
 router.post('/authorizations', setAuthorizations);
+router.get('/hasbasicauthz', hasBasicAuthz);
 router.get('/banks', getBanks);
 router.post('/banks', createBank);
 router.get('/banks/:bankId', getBankDetails);
 router.put('/banks/:bankId', editBankDetails);
+router.delete('/banks/:bankId', deleteBank);
+router.get('/banks/:bankId/children', getBankChildren);
 router.get('/banks/:bankId/items', getBankItems);
 router.get('/banks/:bankId/missions', getMissions);
-router.get('/banks/:bankId/hasbasicauthz', hasBasicAuthz);
 router.post('/banks/:bankId/missions', addSharedMission);
 router.post('/banks/:bankId/personalmissions', addPersonalizedMission);
 router.get('/banks/:bankId/privatebankid', getPrivateBankIdForUser);
@@ -518,6 +513,69 @@ function editBankDetails(req, res) {
     data: req.body,
     method: 'PUT',
     path: `assessment/banks/${req.params.bankId}`
+  };
+
+  // do this async-ly
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function deleteBank(req, res) {
+  // delete a given bank and remove it from the hierarchy
+  // need the original bankId, not privateBankAlias
+  let options = {
+    path: `assessment/hierarchies/nodes/${req.params.bankId}/parents`
+  }
+  // Todo: clean this up on the server-side to also have ?raw flag
+  qbank(options)
+  .then((parents) => {
+    let originalParents = JSON.parse(parents).data.results
+    if (originalParents.length > 0) {
+      let removeFromHierarchyOptions = {
+        method: 'DELETE',
+        data: {
+          ids: _.map(originalParents, 'id')
+        },
+        path: `assessment/hierarchies/nodes/${req.params.bankId}/parents`
+      }
+      return qbank(removeFromHierarchyOptions)
+    } else {
+      return Q.when('')
+    }
+  })
+  .then((result) => {
+    // now remove from the children hierarchy too
+    let childrenOptions = {
+      method: 'PUT',
+      data: {ids: []},
+      path: `assessment/hierarchies/nodes/${req.params.bankId}/children`
+    }
+    return qbank(childrenOptions)
+  })
+  .then((result) => {
+    let deleteOptions = {
+      method: 'DELETE',
+      path: `assessment/banks/${req.params.bankId}`
+    }
+    return qbank(deleteOptions)
+  })
+  .then((result) => {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function getBankChildren(req, res) {
+  // Gets you the children from the hierarchy service
+  let options = {
+    path: `assessment/hierarchies/nodes/${req.params.bankId}/children`
   };
 
   // do this async-ly
@@ -731,28 +789,20 @@ function getMissions(req, res) {
 
 function hasBasicAuthz(req, res) {
   // do authz check on basic QBank access
-  // Changed from canTakeMissions authz check because
-  //   of the way we're handling Phase II missions now,
-  //   students don't have blanket access to take for
-  //   an entire school.
   let username = getUsername(req)
   let options = {
-      path: `assessment/banks/${req.params.bankId}`
+      path: `authorization/authorizations?agentId=${username}`
     }
 
-  // need to get the original bankId, because for some reason
-  // server-side, the authz doesn't work properly for aliased ids?
   qbank(options)
-  .then( function (originalBank) {
-    bank = JSON.parse(originalBank)
-    let bankOptions = {
-      path: `assessment/banks/${bank.id}`,
-      proxy: username
+  .then( function (authz) {
+    let numAuthz = JSON.parse(authz).data.count
+
+    if (numAuthz > 0) {
+      return res.send('')
+    } else {
+      return res.status(403).send('');
     }
-    return qbank(options)
-  })
-  .then( function(result) {
-    return res.send(result)
   })
   .catch( function(err) {
     return res.status(err.statusCode).send(err.message);
@@ -1102,6 +1152,29 @@ function setAuthorizations(req, res) {
     method: 'POST',
     path: `authorization/authorizations`
   };
+
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function deleteAuthorizations(req, res) {
+  // bulk-delete the authorizations
+  let username = getUsername(req)
+  let options
+  if (username) {
+    options = {
+      method: 'DELETE',
+      path: `authorization/authorizations?agentId=${username}`
+    };
+  } else {
+    // no username, do nothing
+    return res.send('')
+  }
 
   qbank(options)
   .then( function(result) {

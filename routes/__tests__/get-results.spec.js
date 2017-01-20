@@ -127,91 +127,94 @@ describe('Instructor getting results', function() {
    });
   });
 
-  // it (`should create Phase II missions for the Internal Test Mission `, done => {
-  //   let phaseIIMissions = _.map(STUDENTS, student => {
-  //     let data = {
-  //       student,
-  //       displayName: 'Internal Test mission'
-  //     };
-  //
-  //     // this says that all students listed will get the same directives
-  //     return utilities.createMission(data, 'phaseII', directives, directivesItemsMap)
-  //   });
-  //
-  //   chai.request(server)
-  //   .post(`/middleman/banks/${ALGEBRA_BANK_ID}/personalmissions`)
-  //   .send(phaseIIMissions)
-  //   .end((err, res) => {
-  //     res.should.have.status(200);
-  //
-  //     let result = JSON.parse(res.text);
-  //     result.length.should.be.eql(STUDENTS.length);
-  //     // console.log('result', result);
-  //
-  //     done();
-  //   });
-  // });
-  //
-  // function getOfferedTakenPromise(student) {
-  //   // this executes only after a random timeout between 1 second and 1 minute
-  //   let deferred = Q.defer();
-  //   let randomTimeout = _.random(1, 1000*60)
-  //
-  //   setTimeout(() => {
-  //     console.log('getting offered + taken for', student.agentId, 'after', randomTimeout)
-  //
-  //     chai.request(server)
-  //     .get(`/middleman/banks/${ALGEBRA_BANK_ID}/missions`)
-  //     .set('x-fbw-username', student.agentId)
-  //     .then( (res) => {
-  //       res.should.have.status(200);
-  //
-  //       let result = JSON.parse(res.text);
-  //       let phaseIIs = _.filter(result, mission => mission.displayName.text.indexOf('Phase II') > -1);
-  //       // console.log('all missions', result)
-  //       // console.log('phaseIIs', phaseIIs);
-  //
-  //       phaseIIs.length.should.be.eql(1);           // since we do cleanup for everyone, there should only be 1 mission
-  //
-  //       let offereds = phaseIIs[0].offereds;
-  //       let assignedBankIds = phaseIIs[0].assignedBankIds;
-  //
-  //       // console.log('offereds', offereds)
-  //
-  //       offereds.length.should.be.eql(1);
-  //       assignedBankIds.length.should.be.eql(1);
-  //
-  //       return chai.request(server)
-  //        .get(`/middleman/banks/${ALGEBRA_BANK_ID}/offereds/${offereds[0].id}/takeMission`)
-  //        .set('x-fbw-username', student.agentId)
-  //     })
-  //     .then( res => {
-  //       let result = JSON.parse(res.text);
-  //       // console.log('got taken', result);
-  //       result.id.should.be.type('string')
-  //
-  //       deferred.resolve(result);
-  //
-  //       return result;
-  //     });
-  //   }, randomTimeout);
-  //
-  //   return deferred.promise;
-  // }
-  //
-  //
-  // it(`should verify that all students can get the offered id and take their own Phase II mission`, function(done) {
-  //   this.timeout(6000000)
-  //
-  //   Q.all(_.map(STUDENTS, getOfferedTakenPromise))
-  //   .then( res => {
-  //     // console.log('got offereds + takens for all students', res)
-  //     done();
-  //   })
-  //
-  // })
-  //
-  //
+  it (`should create Phase II missions for the Internal Test Mission `, done => {
+    let phaseIIMissions = _.map(STUDENTS, student => {
+      let data = {
+        student,
+        displayName: 'Internal Test mission'
+      };
+
+      // this says that all students listed will get the same directives
+      return utilities.createMission(data, 'phaseII', directives, directivesItemsMap)
+    });
+
+    chai.request(server)
+    .post(`/middleman/banks/${ALGEBRA_BANK_ID}/personalmissions`)
+    .send(phaseIIMissions)
+    .end((err, res) => {
+      res.should.have.status(200);
+
+      let result = JSON.parse(res.text);
+      result.length.should.be.eql(STUDENTS.length);
+      // console.log('result', result);
+
+      done();
+    });
+  });
+
+  function getOfferedTakenPromise(student) {
+    // this executes only after a random timeout between 1 second and 1 minute
+    let deferred = Q.defer();
+    let randomTimeout = _.random(1, 1000*15)
+
+    setTimeout(() => {
+      console.log('getting offered + taken for', student.agentId, 'after', randomTimeout)
+
+      chai.request(server)
+      .get(`/middleman/banks/${ALGEBRA_BANK_ID}/missions`)
+      .set('x-fbw-username', student.agentId)
+      .then( (res) => {
+        res.should.have.status(200);
+
+        let result = JSON.parse(res.text);
+        let phaseIIs = _.filter(result, mission => mission.displayName.text.indexOf('Phase II') > -1);
+        // console.log('all missions', result)
+        // console.log('phaseIIs', phaseIIs);
+
+        phaseIIs.length.should.be.eql(1);           // since we do cleanup for everyone, there should only be 1 mission
+
+        let offereds = phaseIIs[0].offereds;
+        let assignedBankIds = phaseIIs[0].assignedBankIds;
+
+        // console.log('offereds', offereds))
+        // console.log('offereds length', offereds.length)
+        // console.log('assignedBankIds', assignedBankIds)
+
+        offereds.length.should.be.eql(1);
+        assignedBankIds.length.should.be.eql(1);
+
+        return chai.request(server)
+         .get(`/middleman/banks/${ALGEBRA_BANK_ID}/offereds/${offereds[0].id}/takeMission`)
+         .set('x-fbw-username', student.agentId)
+      })
+      .then( res => {
+        let result = JSON.parse(res.text);
+        // console.log('got taken', result);
+        // this should return a list of sections
+        result.length.should.eql(directives.length);     // 14 directives
+
+        deferred.resolve(result);
+
+        return result;
+      });
+    }, randomTimeout);
+
+    return deferred.promise;
+  }
+
+
+  it(`should verify that all students can get the offered id and take their own Phase II mission`, function(done) {
+    this.timeout(300000)
+
+    Q.all(_.map(STUDENTS, getOfferedTakenPromise))
+    .then( res => {
+      // console.log('got offereds + takens for all students', res)
+      done();
+    })
+
+  })
+
+
   function deleteMissionAsync(missionId) {
     return chai.request(server)
      .delete(`/middleman/banks/${ALGEBRA_BANK_ID}/missions/${missionId}`)
