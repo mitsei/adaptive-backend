@@ -14,6 +14,10 @@ const mockStudentResponses = {
   'S99999991': {    // 'nutter butter'
     whoami: require('./S99999991.whoami.json'),
     enrollments: require('./S99999991.enrollments.json'),
+  },
+  'S99999992': {
+    whoami: require('./S99999992.whoami.json'),
+    enrollments: require('./S99999992.enrollments.json'),
   }
 }
 
