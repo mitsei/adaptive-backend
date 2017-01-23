@@ -18,9 +18,6 @@ chai.use(chaiHttp);
 const ALGEBRA_BANK_ID = 'assessment.Bank%3A576d6d3271e4828c441d721a%40bazzim.MIT.EDU';
 const ACCOUNTING_BANK_ID = 'assessment.Bank%3A57d70ed471e482a74879349a%40bazzim.MIT.EDU';
 
-const STUDENT_ID = 'LUWEEZY@fbw-visitor.edu'
-const PRIVATE_ALGEBRA_BANK_ID = 'assessment.Bank%3A5850599e71e4824fcc9d345f%40bazzim.MIT.EDU'
-const ASSIGNED_BANK_ID = "assessment.Bank%3A581a39cd71e4822fa62c96cd%40bazzim.MIT.EDU";
 const OFFERED_ID = "assessment.AssessmentOffered%3A5855473871e4823bce25a7fd%40bazzim.MIT.EDU";    // the internal test mission
 const SECTION_ID = "assessment.AssessmentSection%3A5855518171e4823bce25aa7f%40bazzim.MIT.EDU";    // the first directive: if two lines are parallel
 
@@ -41,23 +38,31 @@ const STUDENTS = [LOGGED_IN_USERNAME_1, LOGGED_IN_USERNAME_2]
 
 const PRIVATE_BANK_ALIASES = {}
 
-PRIVATE_BANK_ALIASES[LOGGED_IN_USERNAME_1] = `assessment.Bank%3A58498ccb71e482e47e0ed8ce-${UNIQUE_USERNAME_1}.${FAKE_SCHOOL}.edu%40ODL.MIT.EDU`
-PRIVATE_BANK_ALIASES[LOGGED_IN_USERNAME_2] = `assessment.Bank%3A58498ccb71e482e47e0ed8ce-${UNIQUE_USERNAME_2}.${FAKE_SCHOOL}.edu%40ODL.MIT.EDU`
+PRIVATE_BANK_ALIASES[LOGGED_IN_USERNAME_1] = `assessment.Bank%3A576d6d3271e4828c441d721a-${UNIQUE_USERNAME_1}.${FAKE_SCHOOL}.edu%40ODL.MIT.EDU`
+PRIVATE_BANK_ALIASES[LOGGED_IN_USERNAME_2] = `assessment.Bank%3A576d6d3271e4828c441d721a-${UNIQUE_USERNAME_2}.${FAKE_SCHOOL}.edu%40ODL.MIT.EDU`
 
 let PRIVATE_BANK_IDS = []
+let TEST_MISSIONS = {}  // used for cleaning up
+let TEST_SECTIONS = []
+let MAPPED_AUTHZ = []
 
 import AUTHORIZATIONS from './_sampleAuthorizations'
 
 
-function privateBank(username) {
+function privateBankAlias(username) {
   return PRIVATE_BANK_ALIASES[username]
 }
 
 function authz(username) {
   return _.map(AUTHORIZATIONS, (authorization) => {
-    authorization.takingAgentId = username
-    return authorization
+    let newAuthz = _.assign({}, authorization)
+    newAuthz.agentId = username
+    return newAuthz
   })
+}
+
+function dblEncodedUsername(username) {
+  return encodeURIComponent(encodeURIComponent(username))
 }
 
 
@@ -66,16 +71,23 @@ describe('multiple new students interacting', function() {
   let questionId;
 
   it(`should each get different private banks`, done => {
-
+    _.each(STUDENTS, (username, index) => {
+      MAPPED_AUTHZ[index] = _.assign([], authz(username));
+    })
     // set up basic authz first, before calling /privatebankid
-    Q.all(_.map(STUDENTS, (username) => {
+    Q.all(_.map(STUDENTS, (username, index) => {
       return chai.request(server)
-     .post(`/middleman/authorizations`)
-     .send({
-       bulk: authz(username)
-     })
+      .post(`/middleman/authorizations`)
+      .send({
+        bulk: MAPPED_AUTHZ[index]
+      })
     }))
-    .then((res) => {
+    .then((results) => {
+      _.each(results, (result, index) => {
+        let newUserAuthz = JSON.parse(result.text)
+        newUserAuthz[0].agentId.should.include(dblEncodedUsername(STUDENTS[index]))
+      })
+
       // now get privateBankIds
       return Q.all(_.map(STUDENTS, (username) => {
         return chai.request(server)
@@ -84,6 +96,7 @@ describe('multiple new students interacting', function() {
       }))
     })
     .then((results) => {
+      results.length.should.be.eql(2)
       // save the private banks to assert IDs are equal, later
       _.each(results, (res) => {
         PRIVATE_BANK_IDS.push(res.text)
@@ -94,13 +107,13 @@ describe('multiple new students interacting', function() {
 
       return Q.all(_.map(STUDENTS, (username) => {
         return chai.request(server)
-        .get(`/middleman/banks/${privateBank(username)}/missions`)
-        .set('x-fbw-username', username)
+        .get(`/middleman/banks/${privateBankAlias(username)}`)
       }))
     })
     .then((results) => {
+      results.length.should.be.eql(2)
       _.each(results, (res, index) => {
-        JSON.parse(res).id.should.be.eql(PRIVATE_BANK_IDS[index])
+        JSON.parse(res.text).id.should.be.eql(PRIVATE_BANK_IDS[index])
       })
 
       done()
@@ -110,91 +123,100 @@ describe('multiple new students interacting', function() {
     })
   });
 
-  // it(`should each be able to see the shared missions`, done => {
-  //   chai.request(server)
-  //  .get(`/middleman/banks/${ALGEBRA_BANK_ID}/offereds/${OFFERED_ID}/takeMission`)
-  //  .set('x-fbw-username', STUDENT_ID)
-  //  .end((err, res) => {
-  //    res.should.have.status(200);
-  //    let result = JSON.parse(res.text);
-  //
-  //    result.length.should.eql(14);     // 14 directives
-  //    let section = result[0];
-  //
-  //   //  console.log('section', section);
-  //
-  //    done();
-  // })
-  //
-  //
-  // it(`should each be able to get questions for a shared mission`, done => {
-  //   chai.request(server)
-  //  .post(`/middleman/banks/${ALGEBRA_BANK_ID}/takens/${SECTION_ID}/questions/${WRONG_QUESTION_ID}/submit`)
-  //  .set('x-fbw-username', STUDENT_ID)
-  //  .send({
-  //    choiceIds: [WRONG_CHOICE_ID],
-  //    type: 'answer-record-type%3Amulti-choice-with-files-and-feedback%40ODL.MIT.EDU'
-  //  })
-  //  .end((err, res) => {
-  //    res.should.have.status(200);
-  //
-  //    let result = JSON.parse(res.text);
-  //   //  console.log('wrong result', result);
-  //    result.isCorrect.should.eql(false);
-  //    // we answered incorrectly on the 3rd Target, so next Question should be waypoint with 3.1 magic numbering
-  //    result.nextQuestion.displayName.text.should.eql('3.1');
-  //
-  //    done();
-  //  });
-  // });
-  //
-  // it(`should submit the correct answer on the 1st Target quesiton for ${STUDENT_ID}`, done => {
-  //   chai.request(server)
-  //  .post(`/middleman/banks/${ALGEBRA_BANK_ID}/takens/${SECTION_ID}/questions/${CORRECT_QUESTION_ID}/submit`)
-  //  .set('x-fbw-username', STUDENT_ID)
-  //  .send({
-  //    choiceIds: [CORRECT_CHOICE_ID],
-  //    type: 'answer-record-type%3Amulti-choice-with-files-and-feedback%40ODL.MIT.EDU'
-  //  })
-  //  .end((err, res) => {
-  //    res.should.have.status(200);
-  //
-  //    let result = JSON.parse(res.text);
-  //    result.isCorrect.should.eql(true);
-  //    result.nextQuestion.displayName.text.should.eql('2');      // we answered correctly on the 1st Target
-  //   //  console.log('correct result', result);
-  //
-  //    done();
-  //  });
-  // });
+  it(`should each be able to see the shared missions`, done => {
+    Q.all(_.map(STUDENTS, (username) => {
+      return chai.request(server)
+      .get(`/middleman/banks/${ALGEBRA_BANK_ID}/missions`)
+      .set('x-fbw-username', username)
+    }))
+    .then((results) => {
+      _.each(results, (res, index) => {
+        let missions = JSON.parse(res.text)
+        missions.length.should.eql(6);
+        TEST_MISSIONS[STUDENTS[index]] = _.find(missions, {assessmentOfferedId: OFFERED_ID})
+      })
+     done();
+   })
+   .catch((err) => {
+     console.log(err)
+   })
+ })
+
+ it(`should each be able to get questions for a shared mission`, done => {
+   Q.all(_.map(STUDENTS, (username) => {
+     return chai.request(server)
+       .get(`/middleman/banks/${ALGEBRA_BANK_ID}/offereds/${OFFERED_ID}/takeMission`)
+       .set('x-fbw-username', username)
+   }))
+   .then((results) => {
+     _.each(results, (result) => {
+       result.should.have.status(200)
+       TEST_SECTIONS.push(JSON.parse(result.text)[0])
+     })
+     done()
+   })
+   .catch((err) => {
+     console.log(err)
+   })
+  });
+
+  it(`should each be able to submit response for a shared mission`, done => {
+    Q.all(_.map(STUDENTS, (username, index) => {
+      let section = TEST_SECTIONS[index]
+      let sectionId = section.id
+      let questionId = section.questions[0].id
+      let choiceId = section.questions[0].choices[0].id
+      return chai.request(server)
+        .post(`/middleman/banks/${ALGEBRA_BANK_ID}/takens/${sectionId}/questions/${questionId}/submit`)
+        .set('x-fbw-username', username)
+        .send({
+          choiceIds: [choiceId],
+          type: 'answer-record-type%3Amulti-choice-with-files-and-feedback%40ODL.MIT.EDU'
+        })
+
+    }))
+    .then((results) => {
+      _.each(results, (result) => {
+        result.should.have.status(200)
+      })
+      done()
+    })
+    .catch((err) => {
+      console.log(err)
+    })
+   });
 
   function cleanUpPromise(username) {
     console.log('cleaning up for', username);
     let privateBank
     // to clean up, need to grab the actual private bank id
     return chai.request(server)
-    .get(`/middleman/banks/${privateBank(username)}`)
+    .get(`/middleman/banks/${privateBankAlias(username)}`)
     .then((res) => {
       res.should.have.status(200);
       privateBank = JSON.parse(res.text)
-      return chai.request(BASE_URL)
-      .get(`/middleman/banks/${privateBank.id}/missions`)
-      .set('x-fbw-username', username)
+
+      // then delete just this user's taken...
+      return chai.request(server)
+      .get(`/middleman/banks/${privateBank.id}/missions/${TEST_MISSIONS[username].id}/takens`)
     })
     .then((res) => {
       res.should.have.status(200)
-      let missions = JSON.parse(res.text)
-      return chai.request(BASE_URL)
-      .delete(`/middleman/banks/${ALGEBRA_BANK_ID}/missions/${missions[0].id}`)
+      let takens = JSON.parse(res.text)
+      let myTaken = _.find(takens, (taken) => {
+        return taken.takingAgentId.indexOf(dblEncodedUsername(username)) >= 0;
+      })
+      return chai.request(server)
+      .delete(`/middleman/banks/${ALGEBRA_BANK_ID}/missions/${TEST_MISSIONS[username].id}/takens/${myTaken.id}`)
     })
     .then((res) => {
-      return chai.request(BASE_URL)
+      return chai.request(server)
       .delete(`/middleman/banks/${privateBank.id}`)
     })
     .then( (res) => {
       res.should.have.status(200);
 
-      return chai.request(BASE_URL)
+      return chai.request(server)
       .delete(`/middleman/authorizations`)
       .set('x-fbw-username', username)
     })
@@ -202,7 +224,9 @@ describe('multiple new students interacting', function() {
       res.should.have.status(200)
       return Q.when('')
     })
-    .catch( err => err);
+    .catch( (err) => {
+      console.log(err)
+    });
   }
 
   // clean up all the newly-created authorizations, banks, and missions
