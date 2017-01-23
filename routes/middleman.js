@@ -423,10 +423,10 @@ function privateBankAliasForUser (bankId, username) {
 
 // =========
 // middleware simply for logging purposes
-router.use((req, res, next) => {
-  console.log('everything will go to ', credentials.qbank.Host, 'with secret=', credentials.qbank.SecretKey, 'with access_id=', credentials.qbank.AccessKeyId);
-  next();
-})
+// router.use((req, res, next) => {
+//   console.log('everything will go to ', credentials.qbank.Host, 'with secret=', credentials.qbank.SecretKey, 'with access_id=', credentials.qbank.AccessKeyId);
+//   next();
+// })
 
 // =======
 
@@ -446,7 +446,9 @@ router.post('/banks/:bankId/missions', addSharedMission);
 router.post('/banks/:bankId/personalmissions', addPersonalizedMission);
 router.get('/banks/:bankId/privatebankid', getPrivateBankIdForUser);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
+router.get('/banks/:bankId/missions/:missionId/takens', getMissionTakens);  // for cleaning up
 router.delete('/banks/:bankId/missions/:missionId/takens', deleteMissionTakens);
+router.delete('/banks/:bankId/missions/:missionId/takens/:takenId', deleteSingleTaken);  // for cleaning up
 router.put('/banks/:bankId/missions/:missionId', editMission);
 
 router.get('/banks/:bankId/missions/:missionId/items', getMissionItems);      // deprecated?
@@ -1100,6 +1102,44 @@ function deleteMissionTakens(req, res) {
   .then( result => {
     return res.send(result)
   })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function getMissionTakens(req, res) {
+  let getOfferedOptions = {
+    path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}/assessmentsoffered?raw`
+  }
+
+  qbank(getOfferedOptions)
+  .then((result) => {
+    let getTakenOptions = {
+      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${JSON.parse(result)[0].id}/assessmentstaken?raw`
+    }
+    return qbank(getTakenOptions)
+  })
+  .then((result) => {
+    return res.send(result)
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
+
+function deleteSingleTaken(req, res) {
+  let deleteTakenOptions = {
+    method: 'DELETE',
+    path: `assessment/banks/${req.params.bankId}/assessmentstaken/${req.params.takenId}`
+  }
+
+  qbank(deleteTakenOptions)
+  .then((result) => {
+    return res.send(result)
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
 }
 
 function editMission(req, res) {
