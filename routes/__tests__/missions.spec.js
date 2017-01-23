@@ -82,7 +82,7 @@ describe('Missions', function() {
    .end((err, res) => {
      let result = JSON.parse(res.text);
     //  console.log(result);
-     (result).length.should.eql(6);
+     (result).length.should.eql(5);
 
     //  _.forEach(result, mission => {
     //    mission.startTime.should.have('number');
@@ -100,7 +100,7 @@ describe('Missions', function() {
      let result = JSON.parse(res.text);
     //  console.log('result for account', result)
 
-     (result).length.should.eql(5);
+     (result).length.should.eql(4);
 
      done();
    });

@@ -47,7 +47,7 @@ describe('d2l', () => {
 
     it('should get whoami of a student', done => {
       chai.request(server)
-     .get(`/mock-d2l/d2l/api/lp/1.5/users/whoami?role=student`)
+     .get(`/mock-d2l/d2l/api/lp/1.5/users/whoami?role=student&sNumber=99999991`)
      .end((err, res) => {
       //  console.log(res)
        let result = JSON.parse(res.text);
