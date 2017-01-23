@@ -421,6 +421,15 @@ function privateBankAliasForUser (bankId, username) {
   return username ? privateBankAlias(bankId, username) : privateBankAlias(bankId, 'instructor')
 }
 
+// =========
+// middleware simply for logging purposes
+router.use((req, res, next) => {
+  console.log('everything will go to ', credentials.qbank.Host, 'with secret=', credentials.qbank.SecretKey, 'with access_id=', credentials.qbank.AccessKeyId);
+  next();
+})
+
+// =======
+
 // so the full path for this endpoint is /middleman/...
 router.delete('/authorizations', deleteAuthorizations);
 router.post('/authorizations', setAuthorizations);
