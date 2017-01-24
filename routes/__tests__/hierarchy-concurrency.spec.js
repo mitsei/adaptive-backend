@@ -27,19 +27,30 @@ const WRONG_CHOICE_ID = "583f570271e482974e517c72";
 const CORRECT_QUESTION_ID = "assessment.Item%3A5855518471e4823bce25aa8d%40assessment-session";
 const CORRECT_CHOICE_ID = "582f1e5571e4822a2a0589d0";
 
+const NOW_SECS = new Date().getTime()
+const UNIQUE_USERNAMES = []
 
-const UNIQUE_USERNAME_1 = Math.floor(new Date().getTime()).toString()
-const UNIQUE_USERNAME_2 = Math.floor(new Date().getTime() + 1).toString()
+const NUM_STUDENTS = 5
+
+_.each(_.range(NUM_STUDENTS), (inc) => {
+  UNIQUE_USERNAMES.push(Math.floor(NOW_SECS + inc).toString())
+})
 const FAKE_SCHOOL = "testing"
-const LOGGED_IN_USERNAME_1 = `${UNIQUE_USERNAME_1}@${FAKE_SCHOOL}.edu`
-const LOGGED_IN_USERNAME_2 = `${UNIQUE_USERNAME_2}@${FAKE_SCHOOL}.edu`
 
-const STUDENTS = [LOGGED_IN_USERNAME_1, LOGGED_IN_USERNAME_2]
+const STUDENTS = _.map(UNIQUE_USERNAMES, (username) => {
+  return `${username}@${FAKE_SCHOOL}.edu`
+})
 
 const PRIVATE_BANK_ALIASES = {}
 
-PRIVATE_BANK_ALIASES[LOGGED_IN_USERNAME_1] = `assessment.Bank%3A576d6d3271e4828c441d721a-${UNIQUE_USERNAME_1}.${FAKE_SCHOOL}.edu%40ODL.MIT.EDU`
-PRIVATE_BANK_ALIASES[LOGGED_IN_USERNAME_2] = `assessment.Bank%3A576d6d3271e4828c441d721a-${UNIQUE_USERNAME_2}.${FAKE_SCHOOL}.edu%40ODL.MIT.EDU`
+function generatePrivateAlias(username) {
+  username = username.replace('@', '.')
+  return `assessment.Bank%3A576d6d3271e4828c441d721a-${username}%40ODL.MIT.EDU`
+}
+
+_.each(STUDENTS, (username) => {
+  PRIVATE_BANK_ALIASES[username] = generatePrivateAlias(username)
+})
 
 let PRIVATE_BANK_IDS = []
 let TEST_MISSIONS = {}  // used for cleaning up
@@ -65,10 +76,48 @@ function dblEncodedUsername(username) {
   return encodeURIComponent(encodeURIComponent(username))
 }
 
+function timeout() {
+  return _.random(1, 500)
+}
+
 
 describe('multiple new students interacting', function() {
 
   let questionId;
+
+  function setBasicAuthz(index) {
+    let deferred = Q.defer();
+
+    setTimeout(() => {
+      chai.request(server)
+      .post(`/middleman/authorizations`)
+      .send({
+        bulk: MAPPED_AUTHZ[index]
+      })
+      .then((res) => {
+        deferred.resolve(res)
+      })
+    }, timeout())
+
+    return deferred.promise
+  }
+
+  function getPrivateBankId(username) {
+    // This is the critical method to test, which modifies the
+    // hierarchy. So the random timeouts here is most important.
+    let deferred = Q.defer();
+
+    setTimeout(() => {
+      chai.request(server)
+      .get(`/middleman/banks/${ALGEBRA_BANK_ID}/privatebankid`)
+      .set('x-fbw-username', username)
+      .then((res) => {
+        deferred.resolve(res)
+      }, timeout())
+    })
+
+    return deferred.promise
+  }
 
   it(`should each get different private banks`, done => {
     _.each(STUDENTS, (username, index) => {
@@ -76,11 +125,7 @@ describe('multiple new students interacting', function() {
     })
     // set up basic authz first, before calling /privatebankid
     Q.all(_.map(STUDENTS, (username, index) => {
-      return chai.request(server)
-      .post(`/middleman/authorizations`)
-      .send({
-        bulk: MAPPED_AUTHZ[index]
-      })
+      return setBasicAuthz(index)
     }))
     .then((results) => {
       _.each(results, (result, index) => {
@@ -90,19 +135,17 @@ describe('multiple new students interacting', function() {
 
       // now get privateBankIds
       return Q.all(_.map(STUDENTS, (username) => {
-        return chai.request(server)
-        .get(`/middleman/banks/${ALGEBRA_BANK_ID}/privatebankid`)
-        .set('x-fbw-username', username)
+        return getPrivateBankId(username)
       }))
     })
     .then((results) => {
-      results.length.should.be.eql(2)
+      results.length.should.be.eql(NUM_STUDENTS)
       // save the private banks to assert IDs are equal, later
       _.each(results, (res) => {
         PRIVATE_BANK_IDS.push(res.text)
       })
 
-      PRIVATE_BANK_IDS.length.should.be.eql(2)
+      PRIVATE_BANK_IDS.length.should.be.eql(NUM_STUDENTS)
       PRIVATE_BANK_IDS[0].should.not.be.eql(PRIVATE_BANK_IDS[1])
 
       return Q.all(_.map(STUDENTS, (username) => {
@@ -111,7 +154,7 @@ describe('multiple new students interacting', function() {
       }))
     })
     .then((results) => {
-      results.length.should.be.eql(2)
+      results.length.should.be.eql(NUM_STUDENTS)
       _.each(results, (res, index) => {
         JSON.parse(res.text).id.should.be.eql(PRIVATE_BANK_IDS[index])
       })
