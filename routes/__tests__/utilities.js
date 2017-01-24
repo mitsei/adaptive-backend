@@ -1,6 +1,17 @@
 const moment = require('moment')
 const _ = require('lodash')
 
+import AUTHORIZATIONS from './_sampleAuthorizations'
+
+
+function authz(username) {
+  return _.map(AUTHORIZATIONS, (authorization) => {
+    let newAuthz = _.assign({}, authorization)
+    newAuthz.agentId = username
+    return newAuthz
+  })
+}
+
 function momentToQBank(momentObject) {
   let timeUTC = momentObject.utc().toObject();
 
@@ -21,11 +32,20 @@ function parseUsername(username) {
 const ALGEBRA_BANK_ID = 'assessment.Bank%3A576d6d3271e4828c441d721a%40bazzim.MIT.EDU';
 const ACCOUNTING_BANK_ID = 'assessment.Bank%3A57d70ed471e482a74879349a%40bazzim.MIT.EDU';
 
+const ALGEBRA_LIBRARY_ID = 'assessment.Bank%3A57279fb9e7dde086d01b93ef%40bazzim.MIT.EDU'
 
 module.exports = {
   ALGEBRA_BANK_ID,
   ACCOUNTING_BANK_ID,
   momentToQBank,
+  authz,
+  timeout: function timeout() {
+    return _.random(1, 500)
+  },
+  generatePrivateAlias: function generatePrivateAlias(username) {
+    username = username.replace('@', '.')
+    return `assessment.Bank%3A576d6d3271e4828c441d721a-${username}%40ODL.MIT.EDU`
+  },
 
   createMission: function createMission(missionData, type, directives, directivesItemsMap) {
     let missionParams = {
@@ -41,7 +61,7 @@ module.exports = {
           learningObjectiveId: outcomeId,
           quota: Math.floor(numItems / 2) || 1,
           waypointQuota: 1,
-          itemBankId: ALGEBRA_BANK_ID,
+          itemBankId: ALGEBRA_LIBRARY_ID,
           minimumProficiency: (Math.floor(numItems / 4) || 1).toString()
         }
       })

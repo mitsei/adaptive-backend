@@ -110,28 +110,6 @@ const directivesItemsMap = {
   'mc3-objective%3A14239%40MIT-OEIT': 6,
 }
 
-const NOW_SECS = new Date().getTime()
-const UNIQUE_USERNAMES = []
-const NUM_NEW_STUDENTS = 15
-
-_.each(_.range(NUM_NEW_STUDENTS), (inc) => {
-  UNIQUE_USERNAMES.push(Math.floor(NOW_SECS + inc).toString())
-})
-const FAKE_SCHOOL = "testing"
-
-const NEW_STUDENTS = _.map(UNIQUE_USERNAMES, (username) => {
-  return {
-    agentId: `${username}@${FAKE_SCHOOL}.edu`,
-    takenId: 'a random string'
-  }
-})
-
-let PRIVATE_BANK_IDS = []
-
-function interactionTimeout() {
-  return _.random(500, 1000*2)
-}
-
 
 describe('Instructor getting results', function() {
   this.timeout(6000000)
@@ -149,23 +127,6 @@ describe('Instructor getting results', function() {
    });
   });
 
-  function setBasicAuthz(username) {
-    let deferred = Q.defer();
-
-    setTimeout(() => {
-      chai.request(server)
-      .post(`/middleman/authorizations`)
-      .send({
-        bulk: utilities.authz(username)
-      })
-      .then((res) => {
-        deferred.resolve(res)
-      })
-    }, utilities.timeout())
-
-    return deferred.promise
-  }
-
   it (`should create Phase II missions for the Internal Test Mission `, done => {
     let phaseIIMissions = _.map(STUDENTS, student => {
       let data = {
@@ -177,101 +138,24 @@ describe('Instructor getting results', function() {
       return utilities.createMission(data, 'phaseII', directives, directivesItemsMap)
     });
 
-    // now let's add in some new students, who were not in the original
-    // like D2L class Roster action
-    phaseIIMissions = _.concat(phaseIIMissions, _.map(NEW_STUDENTS, student => {
-      let data = {
-        student,
-        displayName: 'Internal Test mission'
-      };
-
-      return utilities.createMission(data, 'phaseII', directives, directivesItemsMap)
-    }))
-    // console.log('phase II missions', phaseIIMissions)
-
-    // then have to create the authz for these new students
-    // In the real workflow, this happens in a backwards fashion, where
-    //   the phase II mission + privateBank + privateAuthz is created first,
-    //   then the new students
-    //   will log in, creating their basic authz, so let's model that here.
     chai.request(server)
     .post(`/middleman/banks/${ALGEBRA_BANK_ID}/personalmissions`)
     .send(phaseIIMissions)
-    .then((res) => {
+    .end((err, res) => {
       res.should.have.status(200);
 
       let result = JSON.parse(res.text);
-      result.length.should.be.eql(STUDENTS.length + NEW_STUDENTS.length);
+      result.length.should.be.eql(STUDENTS.length);
       // console.log('result', result);
 
-      // now let's create basic authz for all the new students,
-      // so they can log in and take in the next step
-      return Q.all(_.map(NEW_STUDENTS, (student) => {
-        return setBasicAuthz(student.agentId)
-      }))
-    })
-    .then((results) => {
-      results.length.should.be.eql(NEW_STUDENTS.length)
-
-      // get the private banks
-      return Q.all(_.map(NEW_STUDENTS, (student) => {
-        return chai.request(server)
-        .get(`/middleman/banks/${utilities.generatePrivateAlias(student.agentId)}`)
-      }))
-    })
-    .then((results) => {
-      PRIVATE_BANK_IDS = _.map(results, (result) => {
-        return JSON.parse(result.text).id
-      })
       done();
-    })
-    .catch((err) => {
-      console.log(err)
     });
   });
-
-  function takeMissionPromise(offeredId, student) {
-    let deferred = Q.defer();
-    let randomTimeout = interactionTimeout()
-
-    setTimeout(() => {
-      chai.request(server)
-      .get(`/middleman/banks/${ALGEBRA_BANK_ID}/offereds/${offeredId}/takeMission`)
-      .set('x-fbw-username', student.agentId)
-      .then((res) => {
-        deferred.resolve(res)
-        return res
-      })
-    }, randomTimeout)
-
-    return deferred.promise
-  }
-
-  function submitResponsePromise(sectionId, questionId, choiceId, student) {
-    let deferred = Q.defer();
-    let randomTimeout = interactionTimeout()
-
-    setTimeout(() => {
-      chai.request(server)
-      .post(`/middleman/banks/${ALGEBRA_BANK_ID}/takens/${sectionId}/questions/${questionId}/submit`)
-      .set('x-fbw-username', student.agentId)
-      .send({
-        choiceIds: [choiceId],
-        type: 'answer-record-type%3Amulti-choice-with-files-and-feedback%40ODL.MIT.EDU'
-      })
-      .then((res) => {
-        deferred.resolve(res)
-        return res
-      })
-    }, randomTimeout)
-
-    return deferred.promise
-  }
 
   function getOfferedTakenPromise(student) {
     // this executes only after a random timeout between 500 milliseconds and 2 seconds
     let deferred = Q.defer();
-    let randomTimeout = interactionTimeout()
+    let randomTimeout = _.random(500, 1000*2)
 
     setTimeout(() => {
       console.log('getting offered + taken for', student.agentId, 'after', randomTimeout)
@@ -298,23 +182,16 @@ describe('Instructor getting results', function() {
 
         offereds.length.should.be.eql(1);
         assignedBankIds.length.should.be.eql(1);
-        return takeMissionPromise(offereds[0].id, student)
+
+        return chai.request(server)
+         .get(`/middleman/banks/${ALGEBRA_BANK_ID}/offereds/${offereds[0].id}/takeMission`)
+         .set('x-fbw-username', student.agentId)
       })
       .then( res => {
         let result = JSON.parse(res.text);
         // console.log('got taken', result);
         // this should return a list of sections
         result.length.should.eql(directives.length);     // 14 directives
-
-        // let's try answering one
-        let sectionId = result[0].id
-        let questionId = result[0].questions[0].id
-        let choiceId = result[0].questions[0].choices[0].id
-
-        return submitResponsePromise(sectionId, questionId, choiceId, student)
-      })
-      .then((result) => {
-        result.should.have.status(200)
 
         deferred.resolve(result);
 
@@ -327,9 +204,9 @@ describe('Instructor getting results', function() {
 
 
   it(`should verify that all students can get the offered id and take their own Phase II mission`, function(done) {
-    this.timeout(600000)
-    let allStudents = _.concat(STUDENTS, NEW_STUDENTS)
-    Q.all(_.map(allStudents, getOfferedTakenPromise))
+    this.timeout(300000)
+
+    Q.all(_.map(STUDENTS, getOfferedTakenPromise))
     .then( res => {
       // console.log('got offereds + takens for all students', res)
       done();
@@ -371,28 +248,9 @@ describe('Instructor getting results', function() {
 
   // clean up all the newly-created Phase II missions and early cruft with no offereds
   after( function(done) {
-    this.timeout(30000);
+    this.timeout(20000);
 
     Q.all(_.map(STUDENTS, cleanUpPromise))
-    .then( res => {
-      console.log("also delete the phase II's for the new / random students")
-      return Q.all(_.map(NEW_STUDENTS, cleanUpPromise))
-    })
-    .then( res => {
-      console.log('delete the new student private banks')
-      return Q.all(_.map(PRIVATE_BANK_IDS, (bankId) => {
-        return chai.request(server)
-        .delete(`/middleman/banks/${bankId}`)
-      }))
-    })
-    .then( res => {
-      console.log('delete the new student authz')
-      return Q.all(_.map(NEW_STUDENTS, (student) => {
-        return chai.request(server)
-        .delete(`/middleman/authorizations`)
-        .set('x-fbw-username', student.agentId)
-      }))
-    })
     .then( res => {
       console.log('cleaned up for all students', res.text);
 
