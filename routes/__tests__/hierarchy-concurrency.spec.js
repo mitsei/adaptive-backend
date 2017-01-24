@@ -12,6 +12,7 @@ const should = chai.should();
 const _ = require('lodash')
 const Q = require('q')
 // const utils = require('')
+const utilities = require('./utilities')
 
 chai.use(chaiHttp);
 
@@ -43,13 +44,8 @@ const STUDENTS = _.map(UNIQUE_USERNAMES, (username) => {
 
 const PRIVATE_BANK_ALIASES = {}
 
-function generatePrivateAlias(username) {
-  username = username.replace('@', '.')
-  return `assessment.Bank%3A576d6d3271e4828c441d721a-${username}%40ODL.MIT.EDU`
-}
-
 _.each(STUDENTS, (username) => {
-  PRIVATE_BANK_ALIASES[username] = generatePrivateAlias(username)
+  PRIVATE_BANK_ALIASES[username] = utilities.generatePrivateAlias(username)
 })
 
 let PRIVATE_BANK_IDS = []
@@ -57,27 +53,13 @@ let TEST_MISSIONS = {}  // used for cleaning up
 let TEST_SECTIONS = []
 let MAPPED_AUTHZ = []
 
-import AUTHORIZATIONS from './_sampleAuthorizations'
-
 
 function privateBankAlias(username) {
   return PRIVATE_BANK_ALIASES[username]
 }
 
-function authz(username) {
-  return _.map(AUTHORIZATIONS, (authorization) => {
-    let newAuthz = _.assign({}, authorization)
-    newAuthz.agentId = username
-    return newAuthz
-  })
-}
-
 function dblEncodedUsername(username) {
   return encodeURIComponent(encodeURIComponent(username))
-}
-
-function timeout() {
-  return _.random(1, 500)
 }
 
 
@@ -85,19 +67,19 @@ describe('multiple new students interacting', function() {
 
   let questionId;
 
-  function setBasicAuthz(index) {
+  function setBasicAuthz(username) {
     let deferred = Q.defer();
 
     setTimeout(() => {
       chai.request(server)
       .post(`/middleman/authorizations`)
       .send({
-        bulk: MAPPED_AUTHZ[index]
+        bulk: utilities.authz(username)
       })
       .then((res) => {
         deferred.resolve(res)
       })
-    }, timeout())
+    }, utilities.timeout())
 
     return deferred.promise
   }
@@ -113,19 +95,16 @@ describe('multiple new students interacting', function() {
       .set('x-fbw-username', username)
       .then((res) => {
         deferred.resolve(res)
-      }, timeout())
+      }, utilities.timeout())
     })
 
     return deferred.promise
   }
 
   it(`should each get different private banks`, done => {
-    _.each(STUDENTS, (username, index) => {
-      MAPPED_AUTHZ[index] = _.assign([], authz(username));
-    })
     // set up basic authz first, before calling /privatebankid
-    Q.all(_.map(STUDENTS, (username, index) => {
-      return setBasicAuthz(index)
+    Q.all(_.map(STUDENTS, (username) => {
+      return setBasicAuthz(username)
     }))
     .then((results) => {
       _.each(results, (result, index) => {
