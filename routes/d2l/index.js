@@ -77,8 +77,8 @@ function getWhoami(req, res) {
   let role = _parseRole(req);
 
   if (role === 'student') {
-    let sNumber = req.body.sNumber || _.sample(_.keys(mockStudentResponses));
-
+    let sNumber = req.query.sNumber || _.sample(_.keys(mockStudentResponses));
+    
     return res.send(mockStudentResponses[sNumber].whoami);
 
   } else if (role === 'instructor') {
