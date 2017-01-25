@@ -129,7 +129,7 @@ const NEW_STUDENTS = _.map(UNIQUE_USERNAMES, (username) => {
 let PRIVATE_BANK_IDS = []
 
 function interactionTimeout() {
-  return _.random(500, 1000*2)
+  return _.random(1000, 1000*3)
 }
 
 
@@ -161,7 +161,7 @@ describe('Instructor getting results', function() {
       .then((res) => {
         deferred.resolve(res)
       })
-    }, utilities.timeout())
+    }, interactionTimeout())
 
     return deferred.promise
   }
