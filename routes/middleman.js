@@ -1144,16 +1144,18 @@ function deleteSingleTaken(req, res) {
 
 function editMission(req, res) {
   // edit an assessment, by adding / editing the parts within it
+  // NOTE, this assumes that basically the ENTIRE mission is passed in,
+  // as a bulk-replacement, i.e. the form on the UI side looks exactly
+  // the same for Edit as it does for Add. All mission fields are required.
   let options = {
     data: req.body,
     method: 'PUT',
     path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}`
   }, updatedMission;
-
   qbank(options)
   .then( function(result) {
     updatedMission = _.assign({}, JSON.parse(result));
-    // edit an assessment offered, i.e. start date / deadline
+    // edit the assessment offered, i.e. start date / deadline
     let options = {
       data: {
         startTime: req.body.startTime,
