@@ -134,7 +134,7 @@ const NEW_STUDENTS = _.map(UNIQUE_USERNAMES, (username) => {
 let PRIVATE_BANK_IDS = []
 
 function interactionTimeout() {
-  return _.random(1000, 1000*3)
+  return _.random(1000*1, 1000*10)
 }
 
 
@@ -240,8 +240,10 @@ describe('Instructor getting results', function() {
     let randomTimeout = interactionTimeout()
 
     setTimeout(() => {
+      let url = `/middleman/banks/${ALGEBRA_BANK_ID}/offereds/${offeredId}/takeMission`
+      console.log('Getting questions from', url, new Date().getTime())
       chai.request(server)
-      .get(`/middleman/banks/${ALGEBRA_BANK_ID}/offereds/${offeredId}/takeMission`)
+      .get(url)
       .set('x-fbw-username', student.agentId)
       .then((res) => {
         deferred.resolve(res)
@@ -257,8 +259,10 @@ describe('Instructor getting results', function() {
     let randomTimeout = interactionTimeout()
 
     setTimeout(() => {
+      let url = `/middleman/banks/${ALGEBRA_BANK_ID}/takens/${sectionId}/questions/${questionId}/submit`
+      console.log('Submitting response to', url, new Date().getTime())
       chai.request(server)
-      .post(`/middleman/banks/${ALGEBRA_BANK_ID}/takens/${sectionId}/questions/${questionId}/submit`)
+      .post(url)
       .set('x-fbw-username', student.agentId)
       .send({
         choiceIds: [choiceId],
