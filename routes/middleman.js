@@ -445,6 +445,7 @@ router.get('/banks/:bankId/missions', getMissions);
 router.post('/banks/:bankId/missions', addSharedMission);
 router.post('/banks/:bankId/personalmissions', addPersonalizedMission);
 router.get('/banks/:bankId/privatebankid', getPrivateBankIdForUser);
+router.get('/banks/:bankId/missions/:missionId', getMission);
 router.delete('/banks/:bankId/missions/:missionId', deleteMission);
 router.get('/banks/:bankId/missions/:missionId/takens', getMissionTakens);  // for cleaning up
 router.delete('/banks/:bankId/missions/:missionId/takens', deleteMissionTakens);
@@ -1178,23 +1179,21 @@ function editMission(req, res) {
     return res.status(err.statusCode).send(err.message);
   });
 }
-//
-// function editOffered(req, res) {
-//   // edit an assessment offered, i.e. start date / deadline
-//   let options = {
-//     data: req.body,
-//     method: 'PUT',
-//     path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.params.offeredId}`
-//   };
-//
-//   qbank(options)
-//   .then( function(result) {
-//     return res.send(result);             // this line sends back the response to the client
-//   })
-//   .catch( function(err) {
-//     return res.status(err.statusCode).send(err.message);
-//   });
-// }
+
+function getMission(req, res) {
+  // get an existing mission with its section info (for updating)
+  // NOTE: this will NOT return the offereds
+  let options = {
+    path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}?sections`
+  };
+  qbank(options)
+  .then( function(result) {
+    return res.send(result);             // this line sends back the response to the client
+  })
+  .catch( function(err) {
+    return res.status(err.statusCode).send(err.message);
+  });
+}
 
 function setAuthorizations(req, res) {
   // bulk-set the authorizations
