@@ -83,6 +83,9 @@ describe('Missions', function() {
      let result = JSON.parse(res.text);
     //  console.log(result);
      (result).length.should.eql(5);
+     _.forEach(result, mission => {
+       mission.should.have.property('sections')
+     })
 
     //  _.forEach(result, mission => {
     //    mission.startTime.should.have('number');
