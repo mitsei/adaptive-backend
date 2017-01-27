@@ -76,6 +76,19 @@ describe('instructor', function() {
     })
   });
 
+  it('should be able to get the mission sections', done => {
+    chai.request(server)
+    .get(`/middleman/banks/${ALGEBRA_BANK_ID}/missions/${MISSION.id}`)
+    .end((err, res) => {
+      res.should.have.status(200)
+      let missionWithSections = JSON.parse(res.text)
+      missionWithSections.sections.length.should.eql(directives.length)
+      let sectionLOs = _.map(missionWithSections.sections, 'learningObjectiveId')
+      sectionLOs.should.eql(_.map(directives, 'id'))
+      done();
+    })
+  })
+
   it(`should be able to remove directives from an existing mission`, done => {
     let updatedDirectives = _.filter(directives, (directive) => {
       return directive.id !== DIRECTIVE_TO_REMOVE
