@@ -1151,7 +1151,7 @@ function editMission(req, res) {
   let options = {
     data: req.body,
     method: 'PUT',
-    path: `assessment/banks/${req.params.bankId}/assessments/${req.params.missionId}`
+    path: `assessment/banks/${sharedBankAlias(req.params.bankId)}/assessments/${req.params.missionId}`
   }, updatedMission;
   qbank(options)
   .then( function(result) {

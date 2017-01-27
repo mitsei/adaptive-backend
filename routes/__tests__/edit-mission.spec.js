@@ -83,6 +83,7 @@ describe('instructor', function() {
       res.should.have.status(200)
       let missionWithSections = JSON.parse(res.text)
       missionWithSections.sections.length.should.eql(directives.length)
+      missionWithSections.assignedBankIds[0].should.not.eql(ALGEBRA_BANK_ID)
       let sectionLOs = _.map(missionWithSections.sections, 'learningObjectiveId')
       sectionLOs.should.eql(_.map(directives, 'id'))
       done();
