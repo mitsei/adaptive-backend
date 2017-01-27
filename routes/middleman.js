@@ -752,7 +752,7 @@ function getMissions(req, res) {
 
   let assessmentOptions;
   if (username) {
-    console.log('getMissions username exists', username);
+    // console.log('getMissions username exists', username);
     // console.log('private bank alias', privateBankAlias(req.params.bankId, username))
     assessmentOptions = {
       path: `assessment/banks/${privateBankAlias(req.params.bankId, username)}/assessments?raw&withOffereds`
@@ -763,9 +763,9 @@ function getMissions(req, res) {
 
   } else {
     // NOTE -- this assumes the privateBankAlias has already been set for instructor
-    // removing "sections" because I don't think we need that flag here
+    // use "sections" so can edit missions in the instructor app
     assessmentOptions = {
-      path: `assessment/banks/${privateBankAlias(req.params.bankId, 'instructor')}/assessments?withOffereds&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
+      path: `assessment/banks/${privateBankAlias(req.params.bankId, 'instructor')}/assessments?withOffereds&sections&raw&genusTypeId=${HOMEWORK_MISSION_GENUS}`
     }
   }
 
