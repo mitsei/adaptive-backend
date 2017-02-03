@@ -116,8 +116,8 @@ const directivesItemsMap = {
 }
 
 const NOW_SECS = new Date().getTime()
-const UNIQUE_USERNAMES = []
-const NUM_NEW_STUDENTS = 15
+const UNIQUE_USERNAMES = ['Jxxxxx-Fxxxxxxxx-1234567']
+const NUM_NEW_STUDENTS = 14
 
 _.each(_.range(NUM_NEW_STUDENTS), (inc) => {
   UNIQUE_USERNAMES.push(Math.floor(NOW_SECS + inc).toString())
