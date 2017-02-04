@@ -43,7 +43,7 @@ module.exports = {
     return _.random(1, 500)
   },
   generatePrivateAlias: function generatePrivateAlias(username) {
-    username = username.replace('@', '.')
+    username = username.replace('@', '.').replace(' ', '-')
     return `assessment.Bank%3A576d6d3271e4828c441d721a-${username}%40ODL.MIT.EDU`
   },
 
