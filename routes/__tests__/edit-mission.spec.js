@@ -76,6 +76,26 @@ describe('instructor', function() {
     })
   });
 
+  it('should be able to update the spawned flag', done => {
+    let parameters = {
+      hasSpawnedFollowOnPhase: true
+    }
+    chai.request(server)
+    .put(`/middleman/banks/${ALGEBRA_BANK_ID}/missions/${MISSION.id}`)
+    .send(parameters)
+    .end((err, res) => {
+      res.should.have.status(200)
+      let mission = JSON.parse(res.text)
+
+      mission.childIds.length.should.eql(MISSION.childIds.length)
+      mission.childIds.should.eql(MISSION.childIds)
+
+      MISSION.hasSpawnedFollowOnPhase.should.eql(false)
+      mission.hasSpawnedFollowOnPhase.should.eql(true)
+      done();
+    })
+  })
+
   it('should be able to get the mission sections', done => {
     chai.request(server)
     .get(`/middleman/banks/${ALGEBRA_BANK_ID}/missions/${MISSION.id}`)

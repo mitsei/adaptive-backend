@@ -1144,40 +1144,60 @@ function deleteSingleTaken(req, res) {
 }
 
 function editMission(req, res) {
-  // edit an assessment, by adding / editing the parts within it
-  // NOTE, this assumes that basically the ENTIRE mission is passed in,
-  // as a bulk-replacement, i.e. the form on the UI side looks exactly
-  // the same for Edit as it does for Add. All mission fields are required.
-  let options = {
-    data: req.body,
-    method: 'PUT',
-    path: `assessment/banks/${sharedBankAlias(req.params.bankId)}/assessments/${req.params.missionId}`
-  }, updatedMission;
-  qbank(options)
-  .then( function(result) {
-    updatedMission = _.assign({}, JSON.parse(result));
-    // edit the assessment offered, i.e. start date / deadline
-    let options = {
-      data: {
-        startTime: req.body.startTime,
-        deadline: req.body.deadline
-      },
-      method: 'PUT',
-      path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${req.body.assessmentOfferedId}`
-    };
+  // used for editing the mission's hasSpawned, etc. for launching phase II
+  // OR used to edit the mission questions / offered
+  let inputData = req.body;
 
-    return qbank(options)
-  })
-  .then( function(result) {
-    result = JSON.parse(result);
-    updatedMission.startTime = result.startTime;
-    updatedMission.deadline = result.deadline;
-    updatedMission.assessmentOfferedId = result.id;
-    return res.send(updatedMission);             // this line sends back the response to the client
-  })
-  .catch( function(err) {
-    return res.status(err.statusCode).send(err.message);
-  });
+  if (inputData.startTime && inputData.deadline && inputData.assessmentOfferedId) {
+    // edit an assessment, by adding / editing the parts within it
+    // NOTE, this assumes that basically the ENTIRE mission is passed in,
+    // as a bulk-replacement, i.e. the form on the UI side looks exactly
+    // the same for Edit as it does for Add. All mission fields are required.
+    let options = {
+      data: inputData,
+      method: 'PUT',
+      path: `assessment/banks/${sharedBankAlias(req.params.bankId)}/assessments/${req.params.missionId}`
+    }, updatedMission;
+    qbank(options)
+    .then( function(result) {
+      updatedMission = _.assign({}, JSON.parse(result));
+      // edit the assessment offered, i.e. start date / deadline
+      let options = {
+        data: {
+          startTime: inputData.startTime,
+          deadline: inputData.deadline
+        },
+        method: 'PUT',
+        path: `assessment/banks/${req.params.bankId}/assessmentsoffered/${inputData.assessmentOfferedId}`
+      };
+
+      return qbank(options)
+    })
+    .then( function(result) {
+      result = JSON.parse(result);
+      updatedMission.startTime = result.startTime;
+      updatedMission.deadline = result.deadline;
+      updatedMission.assessmentOfferedId = result.id;
+      return res.send(updatedMission);             // this line sends back the response to the client
+    })
+    .catch( function(err) {
+      return res.status(err.statusCode).send(err.message);
+    });
+  } else {
+    // just update the mission itself, without the offered / questions
+    let options = {
+      data: req.body,
+      method: 'PUT',
+      path: `assessment/banks/${sharedBankAlias(req.params.bankId)}/assessments/${req.params.missionId}`
+    };
+    qbank(options)
+    .then( function(result) {
+      return res.send(result);             // this line sends back the response to the client
+    })
+    .catch( function(err) {
+      return res.status(err.statusCode).send(err.message);
+    });
+  }
 }
 
 function getMission(req, res) {
