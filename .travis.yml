@@ -15,10 +15,11 @@ branches:
 # command to install dependencies
 install:
   - yarn
+  - yarn global add babel-core babel-istanbul
 
 # command to run tests
 script:
-  - ./node_modules/.bin/nyc yarn test
+  - yarn test
 
 # command to report coverage
 after_success:
