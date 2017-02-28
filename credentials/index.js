@@ -11,8 +11,8 @@ module.exports = {
   hardcodedBanks: [['assessment.Bank%3A57d70ed471e482a74879349a%40bazzim.MIT.EDU', 'accounting'],  // Accounting Fall 2016, ACC
                    ['assessment.Bank%3A576d6d3271e4828c441d721a%40bazzim.MIT.EDU', 'algebra']],  // Algebra Fall 2016, ACC
   handcar: {
-    ProxyKey: process.env.MC3_TOKEN || '',
-    Host: process.env.MC3_HOST || 'example.com'
+    ProxyKey: process.env.PROD_MC3_TOKEN || process.env.DEV_MC3_TOKEN || '',
+    Host: process.env.PROD_MC3_HOST || process.env.DEV_MC3_HOST || 'example.com'
   },
   qbank: {
     SecretKey: process.env.QBANK_SECRET || '',
