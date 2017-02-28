@@ -2,10 +2,10 @@
 process.env.NODE_ENV = 'production';
 process.env.PORT = 5001;
 
-import prodCredentials from '../../credentials/_prod.credentials.js'
-process.env.PROD_QBANK_SECRET = prodCredentials.qbank.SecretKey
-process.env.PROD_QBANK_ACCESS_ID = prodCredentials.qbank.AccessKeyId
-process.env.PROD_QBANK_HOST = prodCredentials.qbank.Host
+// import prodCredentials from '../../credentials/_prod.credentials.js'
+// process.env.PROD_QBANK_SECRET = prodCredentials.qbank.SecretKey
+// process.env.PROD_QBANK_ACCESS_ID = prodCredentials.qbank.AccessKeyId
+// process.env.PROD_QBANK_HOST = prodCredentials.qbank.Host
 
 // const env = require('./environment');
 const Q = require('q')
@@ -405,9 +405,9 @@ describe('Instructor getting results', function() {
     })
     .then( res => {
       console.log('cleaned up for all students', res.text);
-      process.env.PROD_QBANK_SECRET = null
-      process.env.PROD_QBANK_ACCESS_ID = null
-      process.env.PROD_QBANK_HOST = null
+      // process.env.PROD_QBANK_SECRET = null
+      // process.env.PROD_QBANK_ACCESS_ID = null
+      // process.env.PROD_QBANK_HOST = null
       done();
     })
   });
