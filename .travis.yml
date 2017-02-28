@@ -1,0 +1,20 @@
+language: "node_js"
+node_js:
+  - "6"
+
+cache:
+  yarn: true
+  directories:
+    - node_modules
+
+# command to install dependencies
+install:
+  - yarn
+
+# command to run tests
+script:
+  - ./node_modules/.bin/nyc yarn test
+
+# command to report coverage
+after_success:
+  - yarn coverage
