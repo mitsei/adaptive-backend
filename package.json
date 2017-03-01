@@ -4,8 +4,13 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
+<<<<<<< HEAD
     "test": "babel-istanbul cover ./node_modules/.bin/_mocha --timeout 30000 --colors $(find . ! -path './node_modules/*' -name '*.spec.js')",
     "coverage": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
+=======
+    "test": "./node_modules/.bin/mocha --timeout 30000 --compilers js:babel-core/register --colors $(find . ! -path './node_modules/*' -name '*.spec.js')",
+    "lint": "eslint routes"
+>>>>>>> feature/cs/linting
   },
   "engines": {
     "node": "6.1.0"
@@ -31,6 +36,7 @@
     "twilio": "^2.11.1"
   },
   "devDependencies": {
+    "babel-eslint": "^7.1.1",
     "babel-plugin-istanbul": "^4.0.0",
     "babel-preset-es2015": "^6.18.0",
     "babel-register": "^6.18.0",
@@ -38,6 +44,11 @@
     "chai-as-promised": "^6.0.0",
     "chai-http": "^3.0.0",
     "coveralls": "^2.11.16",
+    "eslint": "^3.16.1",
+    "eslint-config-airbnb": "^14.1.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^4.0.0",
+    "eslint-plugin-react": "^6.10.0",
     "fbw-platform-common": "^0.11.0",
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0",
