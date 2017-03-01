@@ -159,7 +159,7 @@ describe('Instructor getting results', () => {
       })
       .then((res) => {
         deferred.resolve(res);
-      })
+      });
     }, interactionTimeout());
 
     return deferred.promise;
@@ -221,7 +221,7 @@ describe('Instructor getting results', () => {
     .then((results) => {
       PRIVATE_BANK_IDS = _.map(results, result => (
         JSON.parse(result.text).id
-      ))
+      ));
       done();
     })
     .catch(() => {

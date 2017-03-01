@@ -100,7 +100,7 @@ describe('instructor', () => {
       res.should.have.status(200);
       const missionWithSections = JSON.parse(res.text);
       missionWithSections.sections.length.should.eql(directives.length);
-      missionWithSections.assignedBankIds[0].should.not.eql(ALGEBRA_BANK_ID)
+      missionWithSections.assignedBankIds[0].should.not.eql(ALGEBRA_BANK_ID);
       const sectionLOs = _.map(missionWithSections.sections, 'learningObjectiveId');
       sectionLOs.should.eql(_.map(directives, 'id'));
       done();

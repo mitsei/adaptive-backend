@@ -22,8 +22,10 @@
 // const ACCOUNTING_BANK_ID = 'assessment.Bank%3A57d70ed471e482a74879349a%40bazzim.MIT.EDU';
 //
 // const ASSIGNED_BANK_ID = "assessment.Bank%3A581a39cd71e4822fa62c96cd%40bazzim.MIT.EDU";
-// const OFFERED_ID = "assessment.AssessmentOffered%3A5855473871e4823bce25a7fd%40bazzim.MIT.EDU";    // the internal test mission
-// const SECTION_ID = "assessment.AssessmentSection%3A5855518171e4823bce25aa7f%40bazzim.MIT.EDU";    // the first directive: if two lines are parallel
+// const OFFERED_ID = "assessment.AssessmentOffered%3A5855473871e4823bce25a7fd%40bazzim.MIT.EDU";
+// the internal test mission
+// const SECTION_ID = "assessment.AssessmentSection%3A5855518171e4823bce25aa7f%40bazzim.MIT.EDU";
+// the first directive: if two lines are parallel
 //
 // const STUDENT_ID = 'LUWEEZY@fbw-visitor.edu'
 // const INSTRUCTOR_ID = 'I5055010092@fbw-visitor.edu'
@@ -121,7 +123,8 @@
 //    .end((err, res) => {
 //      res.should.have.status(200);
 //      let result = JSON.parse(res.text);
-//      result.length.should.be.above(1);        // there's 1 taken just from testing alone + possibly a bunch of others
+//      result.length.should.be.above(1);
+        // there's 1 taken just from testing alone + possibly a bunch of others
 //     //  console.log(result);
 //
 //      done();
@@ -168,11 +171,13 @@
 //         res.should.have.status(200);
 //
 //         let result = JSON.parse(res.text);
-//         let phaseIIs = _.filter(result, mission => mission.displayName.text.indexOf('Phase II') > -1);
+//         let phaseIIs = _.filter(result,
+//           mission => mission.displayName.text.indexOf('Phase II') > -1);
 //         // console.log('all missions', result)
 //         // console.log('phaseIIs', phaseIIs);
 //
-//         phaseIIs.length.should.be.eql(1);           // since we do cleanup for everyone, there should only be 1 mission
+//         phaseIIs.length.should.be.eql(1);
+          // since we do cleanup for everyone, there should only be 1 mission
 //
 //         let offereds = phaseIIs[0].offereds;
 //         let assignedBankIds = phaseIIs[0].assignedBankIds;
@@ -204,7 +209,8 @@
 //   }
 //
 //
-//   it(`should verify that all students can get the offered id and take their own Phase II mission`, function(done) {
+//   it('should verify that all students can get the offered id
+//        and take their own Phase II mission', function(done) {
 //     this.timeout(300000)
 //
 //     Q.all(_.map(STUDENTS, getOfferedTakenPromise))
@@ -235,7 +241,9 @@
 //       res.should.have.status(200);
 //
 //       let result = JSON.parse(res.text);
-//       let phaseIIs = _.filter(result, mission => mission.displayName.text.indexOf('Phase II') > -1 || mission.offereds.length == 0);
+//       let phaseIIs = _.filter(result,
+//         mission => mission.displayName.text.indexOf('Phase II') > -1 ||
+//         mission.offereds.length == 0);
 //       // console.log('all missions', result);
 //       // console.log(result[0].displayName);
 //
