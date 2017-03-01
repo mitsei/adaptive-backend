@@ -9,11 +9,7 @@ var bodyParser = require('body-parser');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var middleman = require('./routes/middleman')
-<<<<<<< HEAD
 let d2l = require('./routes/d2l')
-=======
-
->>>>>>> set up
 var app = express();
 
 // view engine setup
