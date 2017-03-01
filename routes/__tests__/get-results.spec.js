@@ -21,6 +21,9 @@ const server = require('../../index');
 const _ = require('lodash');
 const utilities = require('./utilities');
 
+const _ = require('lodash');
+const utilities = require('./utilities');
+
 chai.should();
 chai.use(chaiHttp);
 
@@ -134,7 +137,6 @@ function interactionTimeout() {
 
 
 describe('Instructor getting results', () => {
-  // this.timeout(6000000);
 
   it('should get results on the Internal Test Mission (Phase I)', (done) => {
     chai.request(server)
@@ -328,7 +330,6 @@ describe('Instructor getting results', () => {
 
 
   it('should verify that all students can get the offered id and take their own Phase II mission', (done) => {
-    // this.timeout(600000);
     const allStudents = _.concat(STUDENTS, NEW_STUDENTS);
     Q.all(_.map(allStudents, getOfferedTakenPromise))
     .then(() => {
@@ -367,8 +368,6 @@ describe('Instructor getting results', () => {
 
   // clean up all the newly-created Phase II missions and early cruft with no offereds
   after((done) => {
-    // this.timeout(30000);
-
     Q.all(_.map(STUDENTS, cleanUpPromise))
     .then(() => (Q.all(_.map(NEW_STUDENTS, cleanUpPromise))))
     .then(() => (

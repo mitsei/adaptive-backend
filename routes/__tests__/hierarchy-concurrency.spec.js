@@ -238,8 +238,6 @@ describe('multiple new students interacting', () => {
 
   // clean up all the newly-created authorizations, banks, and missions
   after((done) => {
-    // this.timeout(20000);
-
     Q.all(_.map(STUDENTS, cleanUpPromise))
     .then(() => (
       // console.log('cleaned up for all newly created students');

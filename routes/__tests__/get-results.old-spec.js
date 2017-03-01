@@ -123,8 +123,12 @@
 //    .end((err, res) => {
 //      res.should.have.status(200);
 //      let result = JSON.parse(res.text);
+<<<<<<< HEAD
 //      result.length.should.be.above(1);
         // there's 1 taken just from testing alone + possibly a bunch of others
+=======
+//      result.length.should.be.above(1);        // there's 1 taken just from testing alone + possibly a bunch of others
+>>>>>>> start linting
 //     //  console.log(result);
 //
 //      done();
@@ -171,6 +175,7 @@
 //         res.should.have.status(200);
 //
 //         let result = JSON.parse(res.text);
+<<<<<<< HEAD
 //         let phaseIIs = _.filter(result,
 //           mission => mission.displayName.text.indexOf('Phase II') > -1);
 //         // console.log('all missions', result)
@@ -178,6 +183,13 @@
 //
 //         phaseIIs.length.should.be.eql(1);
           // since we do cleanup for everyone, there should only be 1 mission
+=======
+//         let phaseIIs = _.filter(result, mission => mission.displayName.text.indexOf('Phase II') > -1);
+//         // console.log('all missions', result)
+//         // console.log('phaseIIs', phaseIIs);
+//
+//         phaseIIs.length.should.be.eql(1);           // since we do cleanup for everyone, there should only be 1 mission
+>>>>>>> start linting
 //
 //         let offereds = phaseIIs[0].offereds;
 //         let assignedBankIds = phaseIIs[0].assignedBankIds;
@@ -209,8 +221,12 @@
 //   }
 //
 //
+<<<<<<< HEAD
 //   it('should verify that all students can get the offered id
 //        and take their own Phase II mission', function(done) {
+=======
+//   it(`should verify that all students can get the offered id and take their own Phase II mission`, function(done) {
+>>>>>>> start linting
 //     this.timeout(300000)
 //
 //     Q.all(_.map(STUDENTS, getOfferedTakenPromise))
@@ -241,9 +257,13 @@
 //       res.should.have.status(200);
 //
 //       let result = JSON.parse(res.text);
+<<<<<<< HEAD
 //       let phaseIIs = _.filter(result,
 //         mission => mission.displayName.text.indexOf('Phase II') > -1 ||
 //         mission.offereds.length == 0);
+=======
+//       let phaseIIs = _.filter(result, mission => mission.displayName.text.indexOf('Phase II') > -1 || mission.offereds.length == 0);
+>>>>>>> start linting
 //       // console.log('all missions', result);
 //       // console.log(result[0].displayName);
 //
