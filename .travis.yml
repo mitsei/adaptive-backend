@@ -1,0 +1,30 @@
+language: "node_js"
+node_js:
+  - "6"
+
+cache:
+  yarn: true
+  directories:
+    - node_modules
+
+branches:
+  only:
+    - master
+    - development
+    - production
+
+before_install:
+  - npm install -g yarn
+
+# command to install dependencies
+install:
+  - yarn
+  - yarn global add babel-core babel-istanbul
+
+# command to run tests
+script:
+  - yarn test
+
+# command to report coverage
+after_success:
+  - yarn coverage
