@@ -39,10 +39,7 @@ app.use(function(req, res, next) {
 app.use('/', routes);
 app.use('/users', users);     // boilerplate code
 app.use('/middleman', middleman);
-<<<<<<< HEAD
 app.use('/mock-d2l', d2l)
-=======
->>>>>>> set up
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
