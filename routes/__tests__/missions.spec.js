@@ -2,16 +2,12 @@
 process.env.NODE_ENV = 'test';
 process.env.PORT = 5001;
 
-// const env = require('./environment');
-
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const server = require('../../index');
-const should = chai.should();
-const _ = require('lodash')
-const Q = require('q')
+const _ = require('lodash');
 
-const utilities = require('./utilities')
+const utilities = require('./utilities');
 
 chai.use(chaiHttp);
 
@@ -59,9 +55,9 @@ const directivesItemsMap = {
   'mc3-objective%3A15115%40MIT-OEIT': 6,
   'mc3-objective%3A15058%40MIT-OEIT': 6,
   'mc3-objective%3A14239%40MIT-OEIT': 6,
-}
+};
 
-const dummy_mission_post = utilities.createMission(
+const dummyMissionPost = utilities.createMission(
   {
     displayName: 'npm test mission',
   },
@@ -70,10 +66,7 @@ const dummy_mission_post = utilities.createMission(
   directivesItemsMap
 );
 
-// console.log('dummy_mission_post', dummy_mission_post)
-
-
-describe('Missions', function() {
+describe('Missions', () => {
 
   // test GET algebra
   it('should get a list of hardcoded-Algebra missions ', done => {
@@ -115,7 +108,7 @@ describe('Missions', function() {
 
     chai.request(server)
    .post(`/middleman/banks/${utilities.ALGEBRA_BANK_ID}/missions`)
-   .send(dummy_mission_post)
+   .send(dummyMissionPost)
    .end((err, res) => {
     //  console.log(res.res);
      res.should.have.status(200);
