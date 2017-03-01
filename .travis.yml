@@ -11,6 +11,10 @@ branches:
   only:
     - master
     - development
+    - production
+
+before_install:
+  - npm install -g yarn
 
 # command to install dependencies
 install:
