@@ -4,13 +4,9 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-<<<<<<< HEAD
-    "test": "babel-istanbul cover ./node_modules/.bin/_mocha --timeout 30000 --colors $(find . ! -path './node_modules/*' -name '*.spec.js')",
-    "coverage": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
-=======
-    "test": "./node_modules/.bin/mocha --timeout 30000 --compilers js:babel-core/register --colors $(find . ! -path './node_modules/*' -name '*.spec.js')",
+    "test": "babel-istanbul cover ./node_modules/.bin/_mocha -- --timeout 30000 $(find . ! -path './node_modules/*' -name '*.spec.js')",
+    "coverage": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
     "lint": "eslint routes"
->>>>>>> feature/cs/linting
   },
   "engines": {
     "node": "6.1.0"
