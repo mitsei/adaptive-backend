@@ -1,40 +1,39 @@
-var express = require('express');
-var router = express.Router();
-var request = require('request');
-var rp = require('request-promise');
-let Q = require('q');
-let _ = require('lodash');
-let auth = require('basic-auth')
+const express = require('express');
 
-let credentials = require('../credentials');
+const router = express.Router();
+const Q = require('q');
+const _ = require('lodash');
+
+const credentials = require('../credentials');
 
 // use these two modified fetch libraries instead of those in
 // fbw-utils because we know these (request-promise) work with Express
 // and qbank signing in Node
-let qbank = require('../lib/qBankFetch')(credentials);
-let handcar = require('../lib/handcarFetch')(credentials);
+const qbank = require('../lib/qBankFetch')(credentials);
+const handcar = require('../lib/handcarFetch')(credentials);
 
-var fbwUtils = require('fbw-utils')(credentials);
-var ConvertDate2Dict = fbwUtils.ConvertDateToDictionary;
-let privateBankAlias = fbwUtils.privateBankAlias;
-let sharedBankAlias = fbwUtils.sharedBankAlias;
+const fbwUtils = require('fbw-utils')(credentials);
 
-let _getTakens = require('./_getTakens')
-let _deleteTaken = require('./_deleteTaken')
-let _deleteOffered = require('./_deleteOffered')
+const ConvertDate2Dict = fbwUtils.ConvertDateToDictionary;
+const privateBankAlias = fbwUtils.privateBankAlias;
+const sharedBankAlias = fbwUtils.sharedBankAlias;
+
+const getTakens = require('./_getTakens');
+const deleteTaken = require('./_deleteTaken');
+const deleteOffered = require('./_deleteOffered');
 
 // these need to be the same constant value in the client-apps, too
-let SHARED_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-shared-missions%40ODL.MIT.EDU"
-let PRIVATE_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-private-missions%40ODL.MIT.EDU"
-let HOMEWORK_MISSION_GENUS = "assessment-genus%3Afbw-homework-mission%40ODL.MIT.EDU"
-let TEST_FLIGHT_MISSION_GENUS = "assessment-genus%3Afbw-in-class-mission%40ODL.MIT.EDU"
-let DEPARTMENT_GENUS = "assessment-bank-genus%3Afbw-department%40ODL.MIT.EDU"
-let SUBJECT_GENUS = "assessment-bank-genus%3Afbw-subject%40ODL.MIT.EDU"
-let TERM_GENUS = "assessment-bank-genus%3Afbw-term%40ODL.MIT.EDU"
+const SHARED_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-shared-missions%40ODL.MIT.EDU"
+const PRIVATE_MISSIONS_GENUS = "assessment-bank-genus%3Afbw-private-missions%40ODL.MIT.EDU"
+const HOMEWORK_MISSION_GENUS = "assessment-genus%3Afbw-homework-mission%40ODL.MIT.EDU"
+const TEST_FLIGHT_MISSION_GENUS = "assessment-genus%3Afbw-in-class-mission%40ODL.MIT.EDU"
+const DEPARTMENT_GENUS = "assessment-bank-genus%3Afbw-department%40ODL.MIT.EDU"
+const SUBJECT_GENUS = "assessment-bank-genus%3Afbw-subject%40ODL.MIT.EDU"
+const TERM_GENUS = "assessment-bank-genus%3Afbw-term%40ODL.MIT.EDU"
 
-let STUDENT_TAKING_AUTHZ_FUNCTIONS = ['assessment.AssessmentTaken%3Acreate%40ODL.MIT.EDU',
-                                      'assessment.AssessmentTaken%3Alookup%40ODL.MIT.EDU',
-                                      'assessment.Assessment%3Atake%40ODL.MIT.EDU']
+const STUDENT_TAKING_AUTHZ_FUNCTIONS = ['assessment.AssessmentTaken%3Acreate%40ODL.MIT.EDU',
+  'assessment.AssessmentTaken%3Alookup%40ODL.MIT.EDU',
+  'assessment.Assessment%3Atake%40ODL.MIT.EDU']
 
 let domainMapping = {
   'algebra': ['assessment.Bank%3A57279fb9e7dde086d01b93ef%40bazzim.MIT.EDU', 'mc3-objectivebank%3A2823%40MIT-OEIT'],
@@ -1040,24 +1039,24 @@ function deleteMission(req, res) {
     offeredIds = _.map(offereds, 'id')
     // get takens
     // console.log('got offereds', offereds)
-    return Q.all(_.map(offereds, offered => _getTakens(offered.id, req.params.bankId)))
+    return Q.all(_.map(offereds, offered => getTakens(offered.id, req.params.bankId)))
   })
   .then((takenResponses) => {
     // must delete takens first
     let takens = _.flatten(_.map(takenResponses, _.ary(JSON.parse, 1)));
 
-    // let deleteTakenPromises = _.compact(_.map(takens, taken => _deleteTaken(taken.id, req.params.bankId)));
+    // let deleteTakenPromises = _.compact(_.map(takens, taken => deleteTaken(taken.id, req.params.bankId)));
     // console.log('deleteTakenPromises', deleteTakenPromises);
 
     // console.log('takens', takens);
 
-    return Q.all(_.map(takens, taken => _deleteTaken(taken.id, req.params.bankId)));
+    return Q.all(_.map(takens, taken => deleteTaken(taken.id, req.params.bankId)));
   })
   .then((result) => {
     // then delete offereds
     // console.log('deleted takens', result);
 
-    deleteOfferedPromises = _.map(offeredIds, offeredId => _deleteOffered(offeredId, req.params.bankId));
+    deleteOfferedPromises = _.map(offeredIds, offeredId => deleteOffered(offeredId, req.params.bankId));
 
     return Q.all(deleteOfferedPromises);
   })
@@ -1087,14 +1086,14 @@ function deleteMissionTakens(req, res) {
     let offereds = JSON.parse(offeredsRaw);
 
     // build this array for later use
-    deleteOfferedPromises = _.map(offereds, offered => _deleteOffered(offered.id, req.params.bankId));
+    deleteOfferedPromises = _.map(offereds, offered => deleteOffered(offered.id, req.params.bankId));
 
     // get takens
-    return Q.all(_.map(offereds, offered => _getTakens(offered.id, req.params.bankId)))
+    return Q.all(_.map(offereds, offered => getTakens(offered.id, req.params.bankId)))
   })
   .then((takenResponses) => {
     let takens = _.map(takenResponses, _.ary(JSON.parse, 1));
-    let deleteTakenPromises = _.compact(_.map(takens, taken => _deleteTaken(taken.id, req.params.bankId)));
+    let deleteTakenPromises = _.compact(_.map(takens, taken => deleteTaken(taken.id, req.params.bankId)));
     // console.log('takens', takens);
     // console.log('deleteTakenPromises', deleteTakenPromises);
 
