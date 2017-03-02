@@ -21,9 +21,6 @@ const server = require('../../index');
 const _ = require('lodash');
 const utilities = require('./utilities');
 
-const _ = require('lodash');
-const utilities = require('./utilities');
-
 chai.should();
 chai.use(chaiHttp);
 
