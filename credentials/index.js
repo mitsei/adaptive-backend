@@ -19,8 +19,8 @@ module.exports = {
     AccessKeyId: process.env.PROD_QBANK_ACCESS_ID || process.env.DEV_QBANK_ACCESS_ID || '',
     Host: process.env.PROD_QBANK_HOST || process.env.DEV_QBANK_HOST || 'example.com',
     SchoolNodes: {
-      'acc': 'assessment.Bank%3A57279fc2e7dde08807231e61%40bazzim.MIT.EDU',
-      'qcc': 'assessment.Bank%3A57279fcee7dde08832f93420%40bazzim.MIT.EDU'
+      acc: 'assessment.Bank%3A57279fc2e7dde08807231e61%40bazzim.MIT.EDU',
+      qcc: 'assessment.Bank%3A57279fcee7dde08832f93420%40bazzim.MIT.EDU'
     },
     Proxy: process.env.PROD_QBANK_PROXY || process.env.DEV_QBANK_PROXY || ''
   },

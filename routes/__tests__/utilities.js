@@ -1,19 +1,18 @@
-const moment = require('moment')
-const _ = require('lodash')
+import AUTHORIZATIONS from './_sampleAuthorizations';
 
-import AUTHORIZATIONS from './_sampleAuthorizations'
-
+const moment = require('moment');
+const _ = require('lodash');
 
 function authz(username) {
   return _.map(AUTHORIZATIONS, (authorization) => {
-    let newAuthz = _.assign({}, authorization)
-    newAuthz.agentId = username
-    return newAuthz
-  })
+    const newAuthz = _.assign({}, authorization);
+    newAuthz.agentId = username;
+    return newAuthz;
+  });
 }
 
 function momentToQBank(momentObject) {
-  let timeUTC = momentObject.utc().toObject();
+  const timeUTC = momentObject.utc().toObject();
 
   return {
     year: timeUTC.years,
@@ -22,7 +21,7 @@ function momentToQBank(momentObject) {
     hour: timeUTC.hours,
     minute: timeUTC.minutes,
     second: timeUTC.seconds
-  }
+  };
 }
 
 function parseUsername(username) {
@@ -32,7 +31,7 @@ function parseUsername(username) {
 const ALGEBRA_BANK_ID = 'assessment.Bank%3A576d6d3271e4828c441d721a%40bazzim.MIT.EDU';
 const ACCOUNTING_BANK_ID = 'assessment.Bank%3A57d70ed471e482a74879349a%40bazzim.MIT.EDU';
 
-const ALGEBRA_LIBRARY_ID = 'assessment.Bank%3A57279fb9e7dde086d01b93ef%40bazzim.MIT.EDU'
+const ALGEBRA_LIBRARY_ID = 'assessment.Bank%3A57279fb9e7dde086d01b93ef%40bazzim.MIT.EDU';
 
 module.exports = {
   ALGEBRA_BANK_ID,
@@ -40,48 +39,48 @@ module.exports = {
   momentToQBank,
   authz,
   timeout: function timeout() {
-    return _.random(1, 500)
+    return _.random(1, 500);
   },
   generatePrivateAlias: function generatePrivateAlias(username) {
-    username = username.replace('@', '.').replace(' ', '-')
-    return `assessment.Bank%3A576d6d3271e4828c441d721a-${username}%40ODL.MIT.EDU`
+    const cleanUsername = username.replace('@', '.').replace(' ', '-');
+    return `assessment.Bank%3A576d6d3271e4828c441d721a-${cleanUsername}%40ODL.MIT.EDU`;
   },
 
   createMission: function createMission(missionData, type, directives, directivesItemsMap) {
-    let missionParams = {
+    const missionParams = {
       displayName: missionData.displayName,
       startTime: momentToQBank(moment()),
       deadline: momentToQBank(moment().add(30, 'days')),
       sections: _.map(directives, (directive) => {
-        let outcomeId = directive.id,
-          numItems = directivesItemsMap[outcomeId];
+        const outcomeId = directive.id;
+        const numItems = directivesItemsMap[outcomeId];
 
         return {
-          type: "assessment-part-genus-type%3Afbw-specify-lo%40ODL.MIT.EDU",
+          type: 'assessment-part-genus-type%3Afbw-specify-lo%40ODL.MIT.EDU',
           learningObjectiveId: outcomeId,
           quota: Math.floor(numItems / 2) || 1,
           waypointQuota: 1,
           itemBankId: ALGEBRA_LIBRARY_ID,
           minimumProficiency: (Math.floor(numItems / 4) || 1).toString()
-        }
+        };
       })
     };
 
     if (type === 'phaseI') {
       missionParams.displayName = missionData.displayName;
-      missionParams.genusTypeId = "assessment-genus%3Afbw-homework-mission%40ODL.MIT.EDU";
-      missionParams.recordTypeIds = ["assessment-record-type%3Afbw-phase-i%40ODL.MIT.EDU"];
+      missionParams.genusTypeId = 'assessment-genus%3Afbw-homework-mission%40ODL.MIT.EDU';
+      missionParams.recordTypeIds = ['assessment-record-type%3Afbw-phase-i%40ODL.MIT.EDU'];
 
     } else if (type === 'phaseII') {
       missionParams.username = missionData.student.agentId;
-      missionParams.sourceAssessmentTakenId = missionData.student.takenId,
-      missionParams.displayName = `${parseUsername(missionData.student.agentId)}'s Phase II for ${missionData.displayName}`,
+      missionParams.sourceAssessmentTakenId = missionData.student.takenId;
+      missionParams.displayName = `${parseUsername(missionData.student.agentId)}'s Phase II for ${missionData.displayName}`;
 
-      missionParams.genusTypeId = "assessment-genus%3Afbw-in-class-mission%40ODL.MIT.EDU";
-      missionParams.recordTypeIds = ["assessment-record-type%3Afbw-phase-ii%40ODL.MIT.EDU"];
+      missionParams.genusTypeId = 'assessment-genus%3Afbw-in-class-mission%40ODL.MIT.EDU';
+      missionParams.recordTypeIds = ['assessment-record-type%3Afbw-phase-ii%40ODL.MIT.EDU'];
     }
 
     return missionParams;
 
   }
-}
+};

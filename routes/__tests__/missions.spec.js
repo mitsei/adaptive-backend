@@ -2,17 +2,14 @@
 process.env.NODE_ENV = 'test';
 process.env.PORT = 5001;
 
-// const env = require('./environment');
-
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const server = require('../../index');
-const should = chai.should();
-const _ = require('lodash')
-const Q = require('q')
+const _ = require('lodash');
 
-const utilities = require('./utilities')
+const utilities = require('./utilities');
 
+chai.should();
 chai.use(chaiHttp);
 
 const directives = [
@@ -59,9 +56,9 @@ const directivesItemsMap = {
   'mc3-objective%3A15115%40MIT-OEIT': 6,
   'mc3-objective%3A15058%40MIT-OEIT': 6,
   'mc3-objective%3A14239%40MIT-OEIT': 6,
-}
+};
 
-const dummy_mission_post = utilities.createMission(
+const dummyMissionPost = utilities.createMission(
   {
     displayName: 'npm test mission',
   },
@@ -70,64 +67,55 @@ const dummy_mission_post = utilities.createMission(
   directivesItemsMap
 );
 
-// console.log('dummy_mission_post', dummy_mission_post)
-
-
-describe('Missions', function() {
+describe('Missions', () => {
 
   // test GET algebra
-  it('should get a list of hardcoded-Algebra missions ', done => {
+  it('should get a list of hardcoded-Algebra missions ', (done) => {
     chai.request(server)
-   .get(`/middleman/banks/${utilities.ALGEBRA_BANK_ID}/missions`)
-   .end((err, res) => {
-     let result = JSON.parse(res.text);
-    //  console.log(result);
-     (result).length.should.eql(5);
-     _.forEach(result, mission => {
-       mission.should.have.property('sections')
-     })
+    .get(`/middleman/banks/${utilities.ALGEBRA_BANK_ID}/missions`)
+    .end((err, res) => {
+      const result = JSON.parse(res.text);
+     //  console.log(result);
+      (result).length.should.eql(7);
+      _.forEach(result, (mission) => {
+        mission.should.have.property('sections');
+      });
 
-    //  _.forEach(result, mission => {
-    //    mission.startTime.should.have('number');
-    //  });
+     //  _.forEach(result, mission => {
+     //    mission.startTime.should.have('number');
+     //  });
 
-     done();
-   });
+      done();
+    });
   });
 
   // test GET accounting
-  it('should get a list of hardcoded-Accounting missions', done => {
+  it('should get a list of hardcoded-Accounting missions', (done) => {
     chai.request(server)
-   .get(`/middleman/banks/${utilities.ACCOUNTING_BANK_ID}/missions`)
-   .end((err, res) => {
-     let result = JSON.parse(res.text);
-    //  console.log('result for account', result)
+    .get(`/middleman/banks/${utilities.ACCOUNTING_BANK_ID}/missions`)
+    .end((err, res) => {
+      const result = JSON.parse(res.text);
+     //  console.log('result for account', result)
 
-     (result).length.should.eql(4);
+      (result).length.should.eql(4);
 
-     done();
-   });
+      done();
+    });
   });
 
   // test POST on algebra missions
-  let postMissionId, assessmentOfferedId;
-  it('should create a new Phase I mission', done => {
+  let postMissionId;
+  it('should create a new Phase I mission', (done) => {
 
     chai.request(server)
    .post(`/middleman/banks/${utilities.ALGEBRA_BANK_ID}/missions`)
-   .send(dummy_mission_post)
+   .send(dummyMissionPost)
    .end((err, res) => {
-    //  console.log(res.res);
      res.should.have.status(200);
-     let result = JSON.parse(res.text);
-    //  console.log('result', result);
+     const result = JSON.parse(res.text);
 
-     result.displayName.text.should.eql('npm test mission')
+     result.displayName.text.should.eql('npm test mission');
      postMissionId = result.id;
-     assessmentOfferedId = result.assessmentOfferedId;
-
-    //  console.log('postMissionId', postMissionId)
-    //  console.log('assessmentOfferedId', assessmentOfferedId)
 
      done();
    });
@@ -136,19 +124,14 @@ describe('Missions', function() {
   // test DELETE on algebra missions
   // technically we should do this in an 'after' block, but since this is so slow, we're fine
   // after(function(outerDone) {
-    it('should delete the recently-created mission', done => {
+  it('should delete the recently-created mission', (done) => {
 
-      chai.request(server)
-     .delete(`/middleman/banks/${utilities.ALGEBRA_BANK_ID}/missions/${postMissionId}`)
-     .end((err, res) => {
-      //  console.log('res.text', res.text)
-       res.should.have.status(200);
+    chai.request(server)
+    .delete(`/middleman/banks/${utilities.ALGEBRA_BANK_ID}/missions/${postMissionId}`)
+    .end((err, res) => {
+      res.should.have.status(200);
 
-       done();
-      //  outerDone();
-     });
+      done();
     });
-  // })
-
-
+  });
 });

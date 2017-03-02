@@ -1,12 +1,11 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express');
 
-let credentials = require('../credentials')
+const router = express.Router();
 
 /*
 GET home page. This is used just as a visual check to make sure the server is up.
 */
-router.get('/', function(req, res, next) {
+router.get('/', (req, res) => {
   res.render('index', { title: 'Express' });
 });
 
