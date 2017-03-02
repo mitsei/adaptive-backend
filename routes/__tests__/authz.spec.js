@@ -9,6 +9,7 @@ const server = require('../../index');
 
 let privateBankId;
 
+chai.should();
 chai.use(chaiHttp);
 
 const ALGEBRA_BANK_ID = 'assessment.Bank%3A576d6d3271e4828c441d721a%40bazzim.MIT.EDU';

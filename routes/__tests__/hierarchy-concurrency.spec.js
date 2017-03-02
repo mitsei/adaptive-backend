@@ -11,6 +11,7 @@ const _ = require('lodash');
 const Q = require('q');
 const utilities = require('./utilities');
 
+chai.should();
 chai.use(chaiHttp);
 
 const ALGEBRA_BANK_ID = 'assessment.Bank%3A576d6d3271e4828c441d721a%40bazzim.MIT.EDU';
@@ -139,7 +140,7 @@ describe('multiple new students interacting', () => {
     .then((results) => {
       _.each(results, (res, index) => {
         const missions = JSON.parse(res.text);
-        missions.length.should.eql(6);
+        missions.length.should.eql(8);
         TEST_MISSIONS[STUDENTS[index]] = _.find(missions, { assessmentOfferedId: OFFERED_ID });
       });
       done();
@@ -237,7 +238,7 @@ describe('multiple new students interacting', () => {
 
   // clean up all the newly-created authorizations, banks, and missions
   after((done) => {
-    this.timeout(20000);
+    // this.timeout(20000);
 
     Q.all(_.map(STUDENTS, cleanUpPromise))
     .then(() => (

@@ -1,5 +1,5 @@
 
-process.env.NODE_ENV = 'production';
+process.env.NODE_ENV = 'test';
 process.env.PORT = 5001;
 
 // import prodCredentials from '../../credentials/_prod.credentials.js'
@@ -21,6 +21,7 @@ const server = require('../../index');
 const _ = require('lodash');
 const utilities = require('./utilities');
 
+chai.should();
 chai.use(chaiHttp);
 
 const ALGEBRA_BANK_ID = 'assessment.Bank%3A576d6d3271e4828c441d721a%40bazzim.MIT.EDU';
@@ -133,7 +134,7 @@ function interactionTimeout() {
 
 
 describe('Instructor getting results', () => {
-  this.timeout(6000000);
+  // this.timeout(6000000);
 
   it('should get results on the Internal Test Mission (Phase I)', (done) => {
     chai.request(server)
@@ -327,7 +328,7 @@ describe('Instructor getting results', () => {
 
 
   it('should verify that all students can get the offered id and take their own Phase II mission', (done) => {
-    this.timeout(600000);
+    // this.timeout(600000);
     const allStudents = _.concat(STUDENTS, NEW_STUDENTS);
     Q.all(_.map(allStudents, getOfferedTakenPromise))
     .then(() => {
@@ -366,7 +367,7 @@ describe('Instructor getting results', () => {
 
   // clean up all the newly-created Phase II missions and early cruft with no offereds
   after((done) => {
-    this.timeout(30000);
+    // this.timeout(30000);
 
     Q.all(_.map(STUDENTS, cleanUpPromise))
     .then(() => (Q.all(_.map(NEW_STUDENTS, cleanUpPromise))))

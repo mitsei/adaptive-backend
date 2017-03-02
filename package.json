@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "test": "babel-istanbul cover ./node_modules/.bin/_mocha -- --timeout 30000 $(find . ! -path './node_modules/*' -name '*.spec.js')",
+    "test": "babel-istanbul cover ./node_modules/.bin/_mocha -- --timeout 60000 $(find . ! -path './node_modules/*' -name '*.spec.js')",
     "coverage": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
     "lint": "eslint routes"
   },

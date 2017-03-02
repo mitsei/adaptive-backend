@@ -9,6 +9,7 @@ const _ = require('lodash');
 
 const utilities = require('./utilities');
 
+chai.should();
 chai.use(chaiHttp);
 
 const directives = [
@@ -75,7 +76,7 @@ describe('Missions', () => {
     .end((err, res) => {
       const result = JSON.parse(res.text);
      //  console.log(result);
-      (result).length.should.eql(5);
+      (result).length.should.eql(7);
       _.forEach(result, (mission) => {
         mission.should.have.property('sections');
       });

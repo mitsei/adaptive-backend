@@ -696,11 +696,9 @@ function getPhase2Results(req, res) {
   }
   // do this async-ly
   let time1 = new Date()
-  console.log('time1', time1.getTime())
   qbank(options)
   .then( function (results) {
     let time2 = new Date()
-    console.log('time2', time2.getTime())
     return res.send(results);             // this line sends back the response to the client
   })
   .catch( function(err) {

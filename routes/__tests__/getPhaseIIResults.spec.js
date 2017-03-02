@@ -11,6 +11,7 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 const server = require('../../index');
 
+chai.should();
 chai.use(chaiHttp);
 
 const MAT_BANK_ID = 'assessment.Bank%3A58498ccb71e482e47e0ed8ce%40bazzim.MIT.EDU';

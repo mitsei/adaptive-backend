@@ -8,6 +8,7 @@ const moment = require('moment');
 const server = require('../../index');
 const _ = require('lodash');
 
+chai.should();
 chai.use(chaiHttp);
 
 const utilities = require('./utilities');
