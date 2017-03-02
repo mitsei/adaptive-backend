@@ -116,6 +116,7 @@ describe('instructor', () => {
     const updatedMission = utilities.createMission({ displayName: 'Test Phase I' },
       'phaseI', updatedDirectives, directivesItemsMap);
     updatedMission.assessmentOfferedId = MISSION.assessmentOfferedId;
+
     chai.request(server)
     .put(`/middleman/banks/${ALGEBRA_BANK_ID}/missions/${MISSION.id}`)
     .send(updatedMission)
@@ -139,6 +140,7 @@ describe('instructor', () => {
     const updatedMission = utilities.createMission({ displayName: newName },
       'phaseI', directives, directivesItemsMap);
     updatedMission.assessmentOfferedId = MISSION.assessmentOfferedId;
+
     chai.request(server)
     .put(`/middleman/banks/${ALGEBRA_BANK_ID}/missions/${MISSION.id}`)
     .send(updatedMission)
@@ -189,6 +191,7 @@ describe('instructor', () => {
     const updatedMission = utilities.createMission({ displayName: 'Test Phase I' },
       'phaseI', updatedDirectives, directivesItemsMap);
     updatedMission.assessmentOfferedId = MISSION.assessmentOfferedId;
+
     chai.request(server)
     .put(`/middleman/banks/${ALGEBRA_BANK_ID}/missions/${MISSION.id}`)
     .send(updatedMission)
