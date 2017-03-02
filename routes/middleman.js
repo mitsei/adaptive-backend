@@ -1025,15 +1025,16 @@ function deleteAuthorizations(req, res) {
     qbank(options)
     .then(result => (res.send(result)))
     .catch(err => (res.status(err.statusCode).send(err.message)));
+  } else {
+    // no username, do nothing
+    res.send('');
   }
-  // no username, do nothing
-  return res.send('');
 }
 
 function setMissionItems(req, res) {
   // Deprecated with the new LO-focused way to define the missions? Oct 25, 2016
   // Sets the items in a specific mission
-  return res.status(500).send('deprecated endpoint');
+  res.status(500).send('deprecated endpoint');
 }
 
 function getNodeChildren(req, res) {
