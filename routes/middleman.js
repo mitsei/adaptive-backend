@@ -1139,8 +1139,12 @@ function getUserMission(req, res) {
   qbank(takenOptions)
   .then((results) => {
     const taken = JSON.parse(results);
+    let path = `assessment/banks/${privateBankAliasId}/assessmentstaken/${taken.id}/questions?raw`;
+    if ('sectionsOnly' in req.query && req.query.sectionsOnly) {
+      path = `assessment/banks/${privateBankAliasId}/assessmentstaken/${taken.id}/sections?raw`;
+    }
     const options = {
-      path: `assessment/banks/${privateBankAliasId}/assessmentstaken/${taken.id}/questions?raw`,
+      path,
       proxy: username
     };
     return qbank(options);
