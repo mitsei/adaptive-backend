@@ -36,7 +36,7 @@ describe('student doing a Mission', () => {
       const result = JSON.parse(res.text);
 
       result.length.should.eql(14);     // 14 directives
-
+      result[0].questions.length.should.eql(4);
       done();
     });
   });
