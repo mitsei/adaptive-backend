@@ -59,6 +59,7 @@ describe('multiple new students interacting', () => {
     setTimeout(() => {
       chai.request(server)
       .post('/middleman/authorizations')
+
       .send({
         bulk: utilities.authz(username)
       })
@@ -174,6 +175,7 @@ describe('multiple new students interacting', () => {
       const sectionId = section.id;
       const questionId = section.questions[0].id;
       const choiceId = section.questions[0].choices[0].id;
+
       return chai.request(server)
         .post(`/middleman/banks/${ALGEBRA_BANK_ID}/takens/${sectionId}/questions/${questionId}/submit`)
         .set('x-fbw-username', username)
@@ -196,6 +198,7 @@ describe('multiple new students interacting', () => {
   function cleanUpPromise(username) {
     // console.log('cleaning up for', username);
     let privateBank;
+
     // to clean up, need to grab the actual private bank id
     return chai.request(server)
     .get(`/middleman/banks/${privateBankAlias(username)}`)

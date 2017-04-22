@@ -1,6 +1,7 @@
 const Q = require('q');
 const _ = require('lodash');
 const text = require('./text');
+
 /**
   sends an announcement to ALL students in the class when Phase I is opened
 */

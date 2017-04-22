@@ -11,6 +11,17 @@ function authz(username) {
   });
 }
 
+import AUTHORIZATIONS from './_sampleAuthorizations'
+
+
+function authz(username) {
+  return _.map(AUTHORIZATIONS, (authorization) => {
+    let newAuthz = _.assign({}, authorization)
+    newAuthz.agentId = username
+    return newAuthz
+  })
+}
+
 function momentToQBank(momentObject) {
   const timeUTC = momentObject.utc().toObject();
 

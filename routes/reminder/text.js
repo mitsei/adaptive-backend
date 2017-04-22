@@ -6,6 +6,9 @@ const TWILIO_NUMBER = process.env.TWILIO_NUMBER || '';
 const client = require('twilio')(TWILIO_ACCOUNT_SID, TWILIO_TOKEN);
 const Q = require('q');
 
+module.exports = {
+  send
+}
 
 /**
   texts a

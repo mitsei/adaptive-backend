@@ -1,5 +1,5 @@
 
-process.env.NODE_ENV = 'test';
+process.env.NODE_ENV = 'production';
 process.env.PORT = 5001;
 
 // import prodCredentials from '../../credentials/_prod.credentials.js'
@@ -130,6 +130,29 @@ let PRIVATE_BANK_IDS = [];
 
 function interactionTimeout() {
   return _.random(1000 * 1, 1000 * 10);
+}
+
+const NOW_SECS = new Date().getTime()
+const UNIQUE_USERNAMES = ['Jxxxxx-Fxxxxxxxx-1234567',
+                          'Mxxxxx-Mxxxxxxx Axxxxx-123']
+const NUM_NEW_STUDENTS = 13
+
+_.each(_.range(NUM_NEW_STUDENTS), (inc) => {
+  UNIQUE_USERNAMES.push(Math.floor(NOW_SECS + inc).toString())
+})
+const FAKE_SCHOOL = "testing"
+
+const NEW_STUDENTS = _.map(UNIQUE_USERNAMES, (username) => {
+  return {
+    agentId: `${username}@${FAKE_SCHOOL}.edu`,
+    takenId: 'a random string'
+  }
+})
+
+let PRIVATE_BANK_IDS = []
+
+function interactionTimeout() {
+  return _.random(1000*1, 1000*10)
 }
 
 

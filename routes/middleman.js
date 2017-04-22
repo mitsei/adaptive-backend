@@ -393,7 +393,6 @@ function privateBankAliasForUser(bankId, username) {
 //   'with secret=', credentials.qbank.SecretKey, 'with access_id=', credentials.qbank.AccessKeyId);
 //   next();
 // })
-
 // =======
 
 function getBanks(req, res) {

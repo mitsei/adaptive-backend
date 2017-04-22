@@ -71,7 +71,6 @@ function getCourses(req, res) {
     const sNumber = req.body.sNumber || 'S99999994';
 
     return res.send(mockInstructorResponses[sNumber].courses);
-
   }
   return res.status(400).send("must send in query the role of 'student' or 'instructor'");
 }
@@ -81,14 +80,12 @@ function getWhoami(req, res) {
 
   if (role === 'student') {
     const sNumber = req.query.sNumber || _.sample(_.keys(mockStudentResponses));
-
     return res.send(mockStudentResponses[sNumber].whoami);
 
   } else if (role === 'instructor') {
     const sNumber = req.body.sNumber || 'S99999994';
 
     return res.send(mockInstructorResponses[sNumber].whoami);
-
   }
   return res.status(400).send("must send in query the role of 'student' or 'instructor'");
 }
