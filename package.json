@@ -9,7 +9,7 @@
     "lint": "eslint routes"
   },
   "engines": {
-    "node": "6.1.0"
+    "node": "6.11.1"
   },
   "dependencies": {
     "basic-auth": "^1.0.4",
